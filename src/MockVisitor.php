@@ -139,6 +139,17 @@ class MockVisitor extends NodeVisitorAbstract
 
     private function convertExpect(Node\Expr\MethodCall $node, $occurence)
     {
+        if (count($node->args) === 1) {
+            $method_name = (string) $node->args[0]->value->value;
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
+                    $method_name
+                ),
+                $occurence
+            );
+        }
+
         if (count($node->args) === 2) {
             $method_name = (string) $node->args[0]->value->value;
             $arguments = $node->args[1];

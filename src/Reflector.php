@@ -60,6 +60,11 @@ class Reflector
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
 
+        $mocks = [];
+
+        $traverser->addVisitor(new MockVisitor($mocks));
+        $traverser->addVisitor(new NewMockVisitor($mocks));
+
         $this->oldStmts = $parser->parse(file_get_contents($this->filepath));
         $this->oldTokens = $lexer->getTokens();
 
@@ -68,8 +73,8 @@ class Reflector
 
     public function doStuff()
     {
-        $dumper = new NodeDumper;
-        echo $dumper->dump($this->newStmts) . "\n";
+        //$dumper = new NodeDumper;
+        //echo $dumper->dump($this->newStmts) . "\n";
     }
 
     public function save()

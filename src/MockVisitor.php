@@ -54,6 +54,7 @@ class MockVisitor extends NodeVisitorAbstract
                     return $this->convertExpect($node, 'once');
                 case 'expectNever':
                     return $this->convertExpect($node, 'never');
+                //setReturnValueAt
             }
         }
     }
@@ -123,41 +124,38 @@ class MockVisitor extends NodeVisitorAbstract
 
     private function convertReturn(Node\Expr\MethodCall $node)
     {
-        if (count($node->args) === 2) {
+        if (count($node->args) <= 3) {
             $method_name = (string) $node->args[0]->value->value;
-            $arguments = $node->args[1];
+            $returned_value = $node->args[1];
+            $arguments = [];
+            if (isset($node->args[2])) {
+                $arguments = $node->args[2]->value->items;
+            }
             return new Node\Expr\MethodCall(
-                    new Node\Expr\MethodCall(
-                        new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
-                        $method_name
-                    ),
-                    'returns',
-                    [$arguments->value]
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
+                    $method_name,
+                    $arguments
+                ),
+                'returns',
+                [$returned_value->value]
             );
         }
     }
 
     private function convertExpect(Node\Expr\MethodCall $node, $occurence)
     {
-        if (count($node->args) === 1) {
+        if (count($node->args) <= 2) {
             $method_name = (string) $node->args[0]->value->value;
-            return new Node\Expr\MethodCall(
-                new Node\Expr\MethodCall(
-                    new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
-                    $method_name
-                ),
-                $occurence
-            );
-        }
-
-        if (count($node->args) === 2) {
-            $method_name = (string) $node->args[0]->value->value;
-            $arguments = $node->args[1];
+            $arguments = [];
+            if (isset($node->args[1])) {
+                $arguments = $node->args[1]->value->items;
+            }
             return new Node\Expr\MethodCall(
                 new Node\Expr\MethodCall(
                     new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
                     $method_name,
-                    $arguments->value->items
+                    $arguments
                 ),
                 $occurence
             );

@@ -32,19 +32,27 @@ class MockVisitor extends NodeVisitorAbstract
      */
     private $mocks = [];
 
+    private $partial_mock = [];
+
     public function leaveNode(Node $node)
     {
         if ($node instanceof Node\Expr\StaticCall) {
-            if ((string)$node->class === 'Mock' && (string)$node->name == 'generate') {
-                if (count($node->args) === 1) {
-                    $this->mocks[] = (string) $node->args[0]->value->value;
-                }
-            }
+            $this->recordGenerate($node);
         }
 
         if ($node instanceof Node\Expr\New_) {
-            if (($class_name = $this->isMock((string) $node->class)) !== false) {
+            $instantiated_class = (string) $node->class;
+            if (($class_name = $this->isMock($instantiated_class)) !== false) {
                 return new Node\Expr\FuncCall(new Node\Name('mock'), [new Node\Arg(new Node\Scalar\String_($class_name))]);
+            }
+            if (isset($this->partial_mock[$instantiated_class])) {
+                return new Node\Expr\FuncCall(
+                    new Node\Name('partial_mock'),
+                    [
+                        new Node\Arg(new Node\Scalar\String_($this->partial_mock[$instantiated_class]['class_name'])),
+                        $this->partial_mock[$instantiated_class]['args'],
+                    ]
+                );
             }
         }
 
@@ -55,6 +63,41 @@ class MockVisitor extends NodeVisitorAbstract
             if ((string)$node->name === 'expectOnce') {
                 return $this->convertExpectOnce($node);
             }
+        }
+    }
+
+    private function recordGenerate(Node\Expr\StaticCall $node)
+    {
+        if ($this->isStaticCall($node, 'Mock', 'generate')) {
+            $this->recordMockGenerate($node);
+        }
+        if ($this->isStaticCall($node, 'Mock', 'generatePartial')) {
+            $this->recordMockGeneratePartial($node);
+        }
+    }
+
+    private function isStaticCall(Node\Expr\StaticCall $node, string $class, string $method)
+    {
+        return (string)$node->class === $class && (string)$node->name === $method;
+    }
+
+    private function recordMockGenerate(Node\Expr\StaticCall $node)
+    {
+        if (count($node->args) === 1) {
+            $this->mocks[] = (string) $node->args[0]->value->value;
+        }
+    }
+
+    private function recordMockGeneratePartial(Node\Expr\StaticCall $node)
+    {
+        if (count($node->args) === 3) {
+            $class_name = (string) $node->args[0]->value->value;
+            $mock_name  = (string) $node->args[1]->value->value;
+            $mocked_methods = $node->args[2];
+            $this->partial_mock[$mock_name] = [
+                'class_name' => $class_name,
+                'args'       => $mocked_methods,
+            ];
         }
     }
 
@@ -79,8 +122,6 @@ class MockVisitor extends NodeVisitorAbstract
         if (count($node->args) === 2) {
             $method_name = (string) $node->args[0]->value->value;
             $arguments = $node->args[1];
-            //var_dump($arguments->value->items);
-            //die();
             return new Node\Expr\MethodCall(
                 new Node\Expr\MethodCall(
                     new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),

@@ -21,32 +21,5 @@
 
 require_once 'vendor/autoload.php';
 
-use PhpParser\{Lexer, NodeTraverser, NodeVisitor, Parser, PrettyPrinter, NodeDumper};
-
-$lexer = new Lexer\Emulative([
-    'usedAttributes' => [
-        'comments',
-        'startLine', 'endLine',
-        'startTokenPos', 'endTokenPos',
-    ],
-]);
-$parser = new Parser\Php7($lexer);
-
-$traverser = new NodeTraverser();
-$traverser->addVisitor(new NodeVisitor\CloningVisitor());
-
-$printer = new PrettyPrinter\Standard();
-
-$oldStmts = $parser->parse(file_get_contents($argv[1]));
-$oldTokens = $lexer->getTokens();
-
-$newStmts = $traverser->traverse($oldStmts);
-
-$dumper = new NodeDumper;
-echo $dumper->dump($newStmts) . "\n";
-
-$newCode = $printer->printFormatPreserving($newStmts, $oldStmts, $oldTokens);
-
-file_put_contents($argv[1], $newCode);
-
-//echo $newCode;
+$reflector = new Reflector\Reflector($argv[1]);
+$reflector->run();

@@ -53,11 +53,14 @@ class MockVisitor extends NodeVisitorAbstract
             if ((string)$node->name === 'setReturnValue') {
                 if (count($node->args) === 2) {
                     $method_name = (string) $node->args[0]->value->value;
-                    //var_dump($method_name);
                     $arguments = $node->args[1];
                     return new Node\Expr\MethodCall(
-                        new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
-                        $method_name
+                            new Node\Expr\MethodCall(
+                                new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
+                                $method_name
+                            ),
+                            'returns',
+                            [$arguments->value]
                     );
                 }
             }

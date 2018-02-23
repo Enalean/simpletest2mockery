@@ -29,12 +29,7 @@ class MockVisitor extends NodeVisitorAbstract
     /**
      * @var array
      */
-    private $mocks;
-
-    public function __construct(array &$mocks)
-    {
-        $this->mocks = $mocks;
-    }
+    private $mocks = [];
 
     public function leaveNode(Node $node)
     {
@@ -47,5 +42,21 @@ class MockVisitor extends NodeVisitorAbstract
                 }
             }
         }
+
+        if ($node instanceof Node\Expr\New_) {
+            if (($class_name = $this->isMock((string) $node->class)) !== false) {
+                return new Node\Expr\FuncCall(new Node\Name('mock'), [new Node\Arg(new Node\Scalar\String_($class_name))]);
+            }
+        }
+    }
+
+    private function isMock(string $class_name)
+    {
+        foreach($this->mocks as $mock) {
+            if ('Mock'.$mock === $class_name) {
+                return $mock;
+            }
+        }
+        return false;
     }
 }

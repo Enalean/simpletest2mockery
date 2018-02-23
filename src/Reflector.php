@@ -63,7 +63,6 @@ class Reflector
         $mocks = [];
 
         $traverser->addVisitor(new MockVisitor($mocks));
-        $traverser->addVisitor(new NewMockVisitor($mocks));
 
         $this->oldStmts = $parser->parse(file_get_contents($this->filepath));
         $this->oldTokens = $lexer->getTokens();

@@ -93,7 +93,9 @@ class MockVisitor extends NodeVisitorAbstract
             $mocked_methods = $node->args[2];
             $this->mocks[$mock_name] = [
                 'class_name' => $class_name,
-                'args'       => $mocked_methods,
+                'args'       => new Node\Arg(
+                    new Node\Expr\Array_($mocked_methods->value->items)
+                ),
             ];
         }
     }

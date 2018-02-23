@@ -42,8 +42,8 @@ class MockVisitor extends NodeVisitorAbstract
 
         if ($node instanceof Node\Expr\New_) {
             $instantiated_class = (string) $node->class;
-            if (($class_name = $this->isMock($instantiated_class)) !== false) {
-                return new Node\Expr\FuncCall(new Node\Name('mock'), [new Node\Arg(new Node\Scalar\String_($class_name))]);
+            if (isset($this->mocks[$instantiated_class])) {
+                return new Node\Expr\FuncCall(new Node\Name('mock'), [new Node\Arg(new Node\Scalar\String_($this->mocks[$instantiated_class]))]);
             }
             if (isset($this->partial_mock[$instantiated_class])) {
                 return new Node\Expr\FuncCall(
@@ -84,7 +84,8 @@ class MockVisitor extends NodeVisitorAbstract
     private function recordMockGenerate(Node\Expr\StaticCall $node)
     {
         if (count($node->args) === 1) {
-            $this->mocks[] = (string) $node->args[0]->value->value;
+            $class_name = (string) $node->args[0]->value->value;
+            $this->mocks['Mock'.$class_name] = $class_name;
         }
     }
 

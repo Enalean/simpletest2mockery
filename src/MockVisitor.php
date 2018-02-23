@@ -32,8 +32,6 @@ class MockVisitor extends NodeVisitorAbstract
      */
     private $mocks = [];
 
-    private $partial_mock = [];
-
     public function leaveNode(Node $node)
     {
         if ($node instanceof Node\Expr\StaticCall) {
@@ -41,18 +39,9 @@ class MockVisitor extends NodeVisitorAbstract
         }
 
         if ($node instanceof Node\Expr\New_) {
-            $instantiated_class = (string) $node->class;
-            if (isset($this->mocks[$instantiated_class])) {
-                return new Node\Expr\FuncCall(new Node\Name('mock'), [new Node\Arg(new Node\Scalar\String_($this->mocks[$instantiated_class]))]);
-            }
-            if (isset($this->partial_mock[$instantiated_class])) {
-                return new Node\Expr\FuncCall(
-                    new Node\Name('partial_mock'),
-                    [
-                        new Node\Arg(new Node\Scalar\String_($this->partial_mock[$instantiated_class]['class_name'])),
-                        $this->partial_mock[$instantiated_class]['args'],
-                    ]
-                );
+            $new_mock = $this->convertNewMock($node);
+            if ($new_mock !== null) {
+                return $new_mock;
             }
         }
 
@@ -64,6 +53,11 @@ class MockVisitor extends NodeVisitorAbstract
                 return $this->convertExpectOnce($node);
             }
         }
+    }
+
+    private function getTargetClassName(string $instantiated_class)
+    {
+        return new Node\Name($this->mocks[$instantiated_class]['class_name'].'::class');
     }
 
     private function recordGenerate(Node\Expr\StaticCall $node)
@@ -85,7 +79,9 @@ class MockVisitor extends NodeVisitorAbstract
     {
         if (count($node->args) === 1) {
             $class_name = (string) $node->args[0]->value->value;
-            $this->mocks['Mock'.$class_name] = $class_name;
+            $this->mocks['Mock'.$class_name] = [
+                'class_name' => $class_name,
+            ];
         }
     }
 
@@ -95,10 +91,28 @@ class MockVisitor extends NodeVisitorAbstract
             $class_name = (string) $node->args[0]->value->value;
             $mock_name  = (string) $node->args[1]->value->value;
             $mocked_methods = $node->args[2];
-            $this->partial_mock[$mock_name] = [
+            $this->mocks[$mock_name] = [
                 'class_name' => $class_name,
                 'args'       => $mocked_methods,
             ];
+        }
+    }
+
+    private function convertNewMock(Node\Expr\New_ $node)
+    {
+        $instantiated_class = (string) $node->class;
+        if (isset($this->mocks[$instantiated_class])) {
+            if (isset($this->mocks[$instantiated_class]['args'])) {
+                return new Node\Expr\FuncCall(
+                    new Node\Name('partial_mock'),
+                    [
+                        $this->getTargetClassName($instantiated_class),
+                        $this->mocks[$instantiated_class]['args'],
+                    ]
+                );
+            } else {
+                return new Node\Expr\FuncCall(new Node\Name('mock'), [$this->getTargetClassName($instantiated_class)]);
+            }
         }
     }
 
@@ -132,15 +146,5 @@ class MockVisitor extends NodeVisitorAbstract
                 'once'
             );
         }
-    }
-
-    private function isMock(string $class_name)
-    {
-        foreach($this->mocks as $mock) {
-            if ('Mock'.$mock === $class_name) {
-                return $mock;
-            }
-        }
-        return false;
     }
 }

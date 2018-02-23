@@ -22,6 +22,7 @@
 namespace Reflector;
 
 use PhpParser\Node;
+use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
 class MockVisitor extends NodeVisitorAbstract
@@ -37,8 +38,7 @@ class MockVisitor extends NodeVisitorAbstract
             if ((string)$node->class === 'Mock' && (string)$node->name == 'generate') {
                 if (count($node->args) === 1) {
                     $this->mocks[] = (string) $node->args[0]->value->value;
-                    var_dump($node->args[0]->value->value);
-                    //return NodeTraverser::REMOVE_NODE;
+                    //var_dump($node->args[0]->value->value);
                 }
             }
         }
@@ -46,6 +46,20 @@ class MockVisitor extends NodeVisitorAbstract
         if ($node instanceof Node\Expr\New_) {
             if (($class_name = $this->isMock((string) $node->class)) !== false) {
                 return new Node\Expr\FuncCall(new Node\Name('mock'), [new Node\Arg(new Node\Scalar\String_($class_name))]);
+            }
+        }
+
+        if ($node instanceof Node\Expr\MethodCall) {
+            if ((string)$node->name === 'setReturnValue') {
+                if (count($node->args) === 2) {
+                    $method_name = (string) $node->args[0]->value->value;
+                    //var_dump($method_name);
+                    $arguments = $node->args[1];
+                    return new Node\Expr\MethodCall(
+                        new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
+                        $method_name
+                    );
+                }
             }
         }
     }

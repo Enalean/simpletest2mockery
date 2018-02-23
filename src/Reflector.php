@@ -42,7 +42,7 @@ class Reflector
     public function run()
     {
         $this->load();
-        $this->doStuff();
+        //$this->doStuff();
         $this->save();
     }
 
@@ -72,8 +72,8 @@ class Reflector
 
     public function doStuff()
     {
-        //$dumper = new NodeDumper;
-        //echo $dumper->dump($this->newStmts) . "\n";
+        $dumper = new NodeDumper;
+        echo $dumper->dump($this->newStmts) . "\n";
     }
 
     public function save()

@@ -46,11 +46,14 @@ class MockVisitor extends NodeVisitorAbstract
         }
 
         if ($node instanceof Node\Expr\MethodCall) {
-            if ((string)$node->name === 'setReturnValue') {
-                return $this->convertReturn($node);
-            }
-            if ((string)$node->name === 'expectOnce') {
-                return $this->convertExpectOnce($node);
+            switch ((string)$node->name) {
+                case 'setReturnValue':
+                case 'setReturnReference':
+                    return $this->convertReturn($node);
+                case 'expectOnce':
+                    return $this->convertExpect($node, 'once');
+                case 'expectNever':
+                    return $this->convertExpect($node, 'never');
             }
         }
     }
@@ -134,7 +137,7 @@ class MockVisitor extends NodeVisitorAbstract
         }
     }
 
-    private function convertExpectOnce(Node\Expr\MethodCall $node)
+    private function convertExpect(Node\Expr\MethodCall $node, $occurence)
     {
         if (count($node->args) === 2) {
             $method_name = (string) $node->args[0]->value->value;
@@ -145,7 +148,7 @@ class MockVisitor extends NodeVisitorAbstract
                     $method_name,
                     $arguments->value->items
                 ),
-                'once'
+                $occurence
             );
         }
     }

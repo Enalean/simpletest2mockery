@@ -38,7 +38,6 @@ class MockVisitor extends NodeVisitorAbstract
             if ((string)$node->class === 'Mock' && (string)$node->name == 'generate') {
                 if (count($node->args) === 1) {
                     $this->mocks[] = (string) $node->args[0]->value->value;
-                    //var_dump($node->args[0]->value->value);
                 }
             }
         }
@@ -51,19 +50,45 @@ class MockVisitor extends NodeVisitorAbstract
 
         if ($node instanceof Node\Expr\MethodCall) {
             if ((string)$node->name === 'setReturnValue') {
-                if (count($node->args) === 2) {
-                    $method_name = (string) $node->args[0]->value->value;
-                    $arguments = $node->args[1];
-                    return new Node\Expr\MethodCall(
-                            new Node\Expr\MethodCall(
-                                new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
-                                $method_name
-                            ),
-                            'returns',
-                            [$arguments->value]
-                    );
-                }
+                return $this->convertReturn($node);
             }
+            if ((string)$node->name === 'expectOnce') {
+                return $this->convertExpectOnce($node);
+            }
+        }
+    }
+
+    private function convertReturn(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) === 2) {
+            $method_name = (string) $node->args[0]->value->value;
+            $arguments = $node->args[1];
+            return new Node\Expr\MethodCall(
+                    new Node\Expr\MethodCall(
+                        new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
+                        $method_name
+                    ),
+                    'returns',
+                    [$arguments->value]
+            );
+        }
+    }
+
+    private function convertExpectOnce(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) === 2) {
+            $method_name = (string) $node->args[0]->value->value;
+            $arguments = $node->args[1];
+            //var_dump($arguments->value->items);
+            //die();
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
+                    $method_name,
+                    $arguments->value->items
+                ),
+                'once'
+            );
         }
     }
 

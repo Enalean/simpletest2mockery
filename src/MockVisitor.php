@@ -50,11 +50,13 @@ class MockVisitor extends NodeVisitorAbstract
                 case 'setReturnValue':
                 case 'setReturnReference':
                     return $this->convertReturn($node);
+                case 'setReturnValueAt':
+                    return $this->convertReturnAt($node);
                 case 'expectOnce':
                     return $this->convertExpect($node, 'once');
                 case 'expectNever':
                     return $this->convertExpect($node, 'never');
-                //setReturnValueAt
+
             }
         }
     }
@@ -139,6 +141,26 @@ class MockVisitor extends NodeVisitorAbstract
                 ),
                 'returns',
                 [$returned_value->value]
+            );
+        }
+    }
+
+    private function convertReturnAt(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 3) {
+            $count       = (int) $node->args[0]->value->value;
+            $method_name = (string) $node->args[1]->value->value;
+            $returned_value = $node->args[2];
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
+                    $method_name
+                ),
+                'returnsAt',
+                [
+                    new Node\Arg(new Node\Scalar\LNumber($count)),
+                    $returned_value->value
+                ]
             );
         }
     }

@@ -51,12 +51,24 @@ class MockVisitor extends NodeVisitorAbstract
                 case 'setReturnReference':
                     return $this->convertReturn($node);
                 case 'setReturnValueAt':
+                case 'setReturnReferenceAt':
                     return $this->convertReturnAt($node);
                 case 'expectOnce':
                     return $this->convertExpect($node, 'once');
                 case 'expectNever':
                     return $this->convertExpect($node, 'never');
-
+                case 'expect':
+                case 'expectAt':
+                case 'expectArguments':
+                case 'expectCallCount':
+                case 'expectMaximumCallCount':
+                case 'expectMinimumCallCount':
+                case 'expectAtLeastOnce':
+                case 'throwOn':
+                case 'throwAt':
+                case 'errorOn':
+                case 'errorAt':
+                    return $node;
             }
         }
     }

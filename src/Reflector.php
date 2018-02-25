@@ -29,24 +29,35 @@ class Reflector
     /**
      * @var string
      */
-    private $filepath;
     private $oldTokens;
     private $oldStmts;
     private $newStmts;
 
-    public function __construct(string $filepath)
+    public function run($filepath)
     {
-        $this->filepath = $filepath;
+        if (is_dir($filepath)) {
+            $rii = new FilterTestCase(
+                new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($filepath),
+                    \RecursiveIteratorIterator::SELF_FIRST
+                )
+            );
+            foreach ($rii as $file) {
+                $this->parseAndSave($file->getPathname());
+            }
+        } else {
+            $this->parseAndSave($filepath);
+        }
     }
 
-    public function run()
+    private function parseAndSave(string $path)
     {
-        $this->load();
+        $this->load($path);
         //$this->doStuff();
-        $this->save();
+        $this->save($path);
     }
 
-    public function load()
+    public function load(string $path)
     {
         $lexer = new Lexer\Emulative([
             'usedAttributes' => [
@@ -64,7 +75,7 @@ class Reflector
 
         $traverser->addVisitor(new MockVisitor($mocks));
 
-        $this->oldStmts = $parser->parse(file_get_contents($this->filepath));
+        $this->oldStmts = $parser->parse(file_get_contents($path));
         $this->oldTokens = $lexer->getTokens();
 
         $this->newStmts = $traverser->traverse($this->oldStmts);
@@ -76,11 +87,11 @@ class Reflector
         echo $dumper->dump($this->newStmts) . "\n";
     }
 
-    public function save()
+    public function save(string $path)
     {
         $printer = new PrettyPrinter\Standard();
         $newCode = $printer->printFormatPreserving($this->newStmts, $this->oldStmts, $this->oldTokens);
 
-        file_put_contents($this->filepath, $newCode);
+        file_put_contents($path, $newCode);
     }
 }

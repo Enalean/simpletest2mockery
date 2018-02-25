@@ -21,5 +21,5 @@
 
 require_once 'vendor/autoload.php';
 
-$reflector = new Reflector\Reflector($argv[1]);
-$reflector->run();
+$reflector = new Reflector\Reflector();
+$reflector->run($argv[1]);

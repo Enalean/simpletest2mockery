@@ -22,7 +22,6 @@
 namespace Reflector;
 
 use PhpParser\Node;
-use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
 class MockVisitor extends NodeVisitorAbstract
@@ -35,7 +34,7 @@ class MockVisitor extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if ($node instanceof Node\Expr\StaticCall) {
-            $this->recordGenerate($node);
+            return $this->recordGenerate($node);
         }
 
         if ($node instanceof Node\Expr\New_) {
@@ -68,7 +67,7 @@ class MockVisitor extends NodeVisitorAbstract
                 case 'throwAt':
                 case 'errorOn':
                 case 'errorAt':
-                    return $node;
+                    //throw \Exception("You need to implement ".(string)$node->name);
             }
         }
     }
@@ -81,11 +80,12 @@ class MockVisitor extends NodeVisitorAbstract
     private function recordGenerate(Node\Expr\StaticCall $node)
     {
         if ($this->isStaticCall($node, 'Mock', 'generate')) {
-            $this->recordMockGenerate($node);
+            return $this->recordMockGenerate($node);
         }
         if ($this->isStaticCall($node, 'Mock', 'generatePartial')) {
-            $this->recordMockGeneratePartial($node);
+            return $this->recordMockGeneratePartial($node);
         }
+        return $node;
     }
 
     private function isStaticCall(Node\Expr\StaticCall $node, string $class, string $method)
@@ -100,7 +100,9 @@ class MockVisitor extends NodeVisitorAbstract
             $this->mocks['Mock'.$class_name] = [
                 'class_name' => $class_name,
             ];
+            return null;
         }
+        return $node;
     }
 
     private function recordMockGeneratePartial(Node\Expr\StaticCall $node)
@@ -115,7 +117,9 @@ class MockVisitor extends NodeVisitorAbstract
                     new Node\Expr\Array_($mocked_methods->value->items)
                 ),
             ];
+            return null;
         }
+        return $node;
     }
 
     private function convertNewMock(Node\Expr\New_ $node)

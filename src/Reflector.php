@@ -72,9 +72,8 @@ class Reflector
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
 
-        $mocks = [];
 
-        $traverser->addVisitor(new MockVisitor($mocks));
+        $traverser->addVisitor(new MockVisitor());
 
         $this->oldStmts = $parser->parse(file_get_contents($path));
         $this->oldTokens = $lexer->getTokens();

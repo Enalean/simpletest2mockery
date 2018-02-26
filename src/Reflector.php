@@ -59,6 +59,7 @@ class Reflector
 
     public function load(string $path)
     {
+        var_dump("process $path");
         $lexer = new Lexer\Emulative([
             'usedAttributes' => [
                 'comments',

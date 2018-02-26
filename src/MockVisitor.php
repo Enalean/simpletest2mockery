@@ -53,9 +53,9 @@ class MockVisitor extends NodeVisitorAbstract
                 case 'setReturnReferenceAt':
                     return $this->convertReturnAt($node);
                 case 'expectOnce':
-                    return $this->convertExpect($node, 'once');
+                    return $this->convertExpectOnce($node);
                 case 'expectNever':
-                    return $this->convertExpect($node, 'never');
+                    return $this->convertExpectNever($node);
                 case 'expect':
                 case 'expectAt':
                 case 'expectArguments':
@@ -181,21 +181,51 @@ class MockVisitor extends NodeVisitorAbstract
         }
     }
 
-    private function convertExpect(Node\Expr\MethodCall $node, $occurence)
+    private function convertExpectOnce(Node\Expr\MethodCall $node)
     {
-        if (count($node->args) <= 2) {
+        if (count($node->args) <= 3) {
             $method_name = (string) $node->args[0]->value->value;
-            $arguments = [];
+            $method_args = [];
             if (isset($node->args[1])) {
-                $arguments = $node->args[1]->value->items;
+                if ($node->args[1]->value instanceof Node\Expr\ConstFetch && (string) $node->args[1]->value->name->parts[0] === 'false') {
+                    $method_args = [];
+                } elseif (isset($node->args[1]->value->items)) {
+                    $method_args = $node->args[1]->value->items;
+                } else {
+                    throw new \Exception("Unhandled construction at  L".$node->getLine());
+                }
+            }
+            $message = [];
+            if (isset($node->args[2])) {
+                $message[] = $node->args[2];
             }
             return new Node\Expr\MethodCall(
                 new Node\Expr\MethodCall(
                     new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
                     $method_name,
-                    $arguments
+                    $method_args
                 ),
-                $occurence
+                'once',
+                $message
+            );
+        }
+    }
+
+    private function convertExpectNever(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 2) {
+            $method_name = (string) $node->args[0]->value->value;
+            $arguments = [];
+            if (isset($node->args[1])) {
+                $arguments[] = $node->args[1];
+            }
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
+                    $method_name
+                ),
+                'never',
+                $arguments
             );
         }
     }

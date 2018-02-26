@@ -108,6 +108,10 @@ class MockVisitor extends NodeVisitorAbstract
     private function recordMockGeneratePartial(Node\Expr\StaticCall $node)
     {
         if (count($node->args) === 3) {
+            if (! isset($node->args[0]->value->value)) {
+                // Maybe a partial mock abstraction => do not manage that
+                return $node;
+            }
             $class_name = (string) $node->args[0]->value->value;
             $mock_name  = (string) $node->args[1]->value->value;
             $mocked_methods = $node->args[2];
@@ -124,6 +128,10 @@ class MockVisitor extends NodeVisitorAbstract
 
     private function convertNewMock(Node\Expr\New_ $node)
     {
+        if ($node->class instanceof Node\Expr\Variable) {
+            // Instantiation based on variables not managed
+            return $node;
+        }
         $instantiated_class = (string) $node->class;
         if (isset($this->mocks[$instantiated_class])) {
             if (isset($this->mocks[$instantiated_class]['args'])) {
@@ -147,7 +155,11 @@ class MockVisitor extends NodeVisitorAbstract
             $returned_value = $node->args[1];
             $arguments = [];
             if (isset($node->args[2])) {
-                $arguments = $node->args[2]->value->items;
+                if (isset($node->args[2]->value->items)) {
+                    $arguments = $node->args[2]->value->items;
+                } elseif ($node->args[2]->value instanceof Node\Expr\Variable) {
+                    $arguments[] = new Node\Arg($node->args[2]->value);
+                }
             }
             return new Node\Expr\MethodCall(
                 new Node\Expr\MethodCall(

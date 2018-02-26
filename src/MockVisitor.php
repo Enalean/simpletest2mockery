@@ -31,6 +31,11 @@ class MockVisitor extends NodeVisitorAbstract
      */
     private $mocks = [];
 
+    /**
+     * @param Node $node
+     * @return int|null|Node|Node[]|Node\Expr\FuncCall|Node\Expr\MethodCall|Node\Expr\New_|Node\Expr\StaticCall
+     * @throws \Exception
+     */
     public function leaveNode(Node $node)
     {
         if ($node instanceof Node\Expr\StaticCall) {
@@ -56,18 +61,20 @@ class MockVisitor extends NodeVisitorAbstract
                     return $this->convertExpectOnce($node);
                 case 'expectNever':
                     return $this->convertExpectNever($node);
+                case 'expectCallCount':
+                    return $this->convertCallCount($node);
                 case 'expect':
                 case 'expectAt':
-                case 'expectCallCount':
                 case 'expectAtLeastOnce':
                 case 'throwOn':
                 case 'throwAt':
+                    throw new \Exception("Implementation is missing for ".(string)$node->name." at L".$node->getLine());
                     break;
                 case 'expectMaximumCallCount':
                 case 'expectMinimumCallCount':
                 case 'errorOn':
                 case 'errorAt':
-                    throw \Exception("Those methods should not be used ".(string)$node->name);
+                    throw new \Exception("Those methods should not be used ".(string)$node->name);
             }
         }
     }
@@ -148,6 +155,11 @@ class MockVisitor extends NodeVisitorAbstract
         }
     }
 
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
     private function convertReturn(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 3) {
@@ -170,9 +182,16 @@ class MockVisitor extends NodeVisitorAbstract
                 'returns',
                 [$returned_value->value]
             );
+        } else {
+            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
         }
     }
 
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
     private function convertReturnAt(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 3) {
@@ -190,9 +209,16 @@ class MockVisitor extends NodeVisitorAbstract
                     $returned_value->value
                 ]
             );
+        } else {
+            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
         }
     }
 
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
     private function convertExpectOnce(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 3) {
@@ -220,9 +246,42 @@ class MockVisitor extends NodeVisitorAbstract
                 'once',
                 $message
             );
+        } else {
+            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
         }
     }
 
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
+    private function convertCallCount(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) === 2) {
+            $method_name = (string) $node->args[0]->value->value;
+            $count = [];
+            if ($node->args[1]->value instanceof Node\Scalar\LNumber) {
+                $count[] = $node->args[1];
+            }
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
+                    $method_name
+                ),
+                'count',
+                $count
+            );
+        } else {
+            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+        }
+    }
+
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
     private function convertExpectNever(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 2) {
@@ -239,6 +298,8 @@ class MockVisitor extends NodeVisitorAbstract
                 'never',
                 $arguments
             );
+        } else {
+            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
         }
     }
 }

@@ -63,8 +63,9 @@ class MockVisitor extends NodeVisitorAbstract
                     return $this->convertExpectNever($node);
                 case 'expectCallCount':
                     return $this->convertCallCount($node);
-                case 'expect':
                 case 'expectAt':
+                    return $this->convertExpectAt($node);
+                case 'expect':
                 case 'expectAtLeastOnce':
                 case 'throwOn':
                 case 'throwAt':
@@ -298,6 +299,34 @@ class MockVisitor extends NodeVisitorAbstract
                 'never',
                 $arguments
             );
+        } else {
+            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+        }
+    }
+
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
+    private function convertExpectAt(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 3) {
+            $timing       = (int) $node->args[0]->value->value;
+            $method_name = (string) $node->args[1]->value->value;
+            $returned_value = $node->args[2];
+            return
+                new Node\Expr\MethodCall(
+                    new Node\Expr\MethodCall(
+                        new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
+                        $method_name,
+                        $returned_value->value->items
+                    ),
+                    'at',
+                    [
+                        new Node\Arg(new Node\Scalar\LNumber($timing))
+                    ]
+                );
         } else {
             throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
         }

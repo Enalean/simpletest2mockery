@@ -58,16 +58,16 @@ class MockVisitor extends NodeVisitorAbstract
                     return $this->convertExpectNever($node);
                 case 'expect':
                 case 'expectAt':
-                case 'expectArguments':
                 case 'expectCallCount':
-                case 'expectMaximumCallCount':
-                case 'expectMinimumCallCount':
                 case 'expectAtLeastOnce':
                 case 'throwOn':
                 case 'throwAt':
+                    break;
+                case 'expectMaximumCallCount':
+                case 'expectMinimumCallCount':
                 case 'errorOn':
                 case 'errorAt':
-                    //throw \Exception("You need to implement ".(string)$node->name);
+                    throw \Exception("Those methods should not be used ".(string)$node->name);
             }
         }
     }

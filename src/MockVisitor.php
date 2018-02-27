@@ -187,7 +187,7 @@ class MockVisitor extends NodeVisitorAbstract
 
     private function convertNewMock(Node\Expr\New_ $node)
     {
-        if ($node->class instanceof Node\Expr\Variable) {
+        if ($node->class instanceof Node\Expr\Variable || $node->class instanceof Node\Expr\PropertyFetch) {
             $this->logger->warning("Instantiation based on variables not managed in $this->filepath at L".$node->getLine());
             return $node;
         }

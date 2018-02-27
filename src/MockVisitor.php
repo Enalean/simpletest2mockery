@@ -104,12 +104,19 @@ class MockVisitor extends NodeVisitorAbstract
 
     private function recordMockGenerate(Node\Expr\StaticCall $node)
     {
-        if (count($node->args) === 1) {
+        if (count($node->args) <= 2) {
             $class_name = (string) $node->args[0]->value->value;
-            $this->mocks['Mock'.$class_name] = [
+            if (isset($node->args[1])) {
+                $mock_name = (string) $node->args[1]->value->value;
+            } else {
+                $mock_name = 'Mock'.$class_name;
+            }
+            $this->mocks[$mock_name] = [
                 'class_name' => $class_name,
             ];
             return null;
+        } else {
+            throw new \Exception("Mock::generate form not supported at L".$node->getLine());
         }
         return $node;
     }
@@ -131,6 +138,8 @@ class MockVisitor extends NodeVisitorAbstract
                 ),
             ];
             return null;
+        } else {
+            throw new \Exception("Mock::generate form not supported at L".$node->getLine());
         }
         return $node;
     }

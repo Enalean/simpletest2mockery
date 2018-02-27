@@ -95,7 +95,7 @@ class MockVisitor extends NodeVisitorAbstract
                 case 'throwOn':
                     return $this->convertThrowOn($node);
                 case 'throwAt':
-                    throw new \Exception("Implementation is missing for ".(string)$node->name." at L".$node->getLine());
+                    return $this->convertThrowsAt($node);
                     break;
                 case 'expectMaximumCallCount':
                 case 'expectMinimumCallCount':
@@ -488,5 +488,31 @@ class MockVisitor extends NodeVisitorAbstract
             );
         }
         throw new \Exception("Un-managed number of arguments for convertThrowOn at L".$node->getLine());
+    }
+
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
+    private function convertThrowsAt(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) === 3) {
+            $timing         = (int) $node->args[0]->value->value;
+            $method_name    = (string) $node->args[1]->value->value;
+            return
+                new Node\Expr\MethodCall(
+                    new Node\Expr\MethodCall(
+                        new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
+                        $method_name
+                    ),
+                    'throwsAt',
+                    [
+                        new Node\Arg(new Node\Scalar\LNumber($timing)),
+                        $node->args[2]
+                    ]
+                );
+        }
+        throw new \Exception("Un-managed number of arguments for convertThrowsAt at L".$node->getLine());
     }
 }

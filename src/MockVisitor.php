@@ -399,15 +399,20 @@ class MockVisitor extends NodeVisitorAbstract
     private function convertExpectAt(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 3) {
-            $timing       = (int) $node->args[0]->value->value;
-            $method_name = (string) $node->args[1]->value->value;
-            $returned_value = $node->args[2];
+            $timing         = (int) $node->args[0]->value->value;
+            $method_name    = (string) $node->args[1]->value->value;
+            if ($node->args[2]->value instanceof Node\Expr\ArrayDimFetch) {
+                $this->logger->error("Unsupported construction in $this->filepath at L".$node->getLine());
+                return $node;
+            } else {
+                $returned_value = $node->args[2]->value->items;
+            }
             return
                 new Node\Expr\MethodCall(
                     new Node\Expr\MethodCall(
                         new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
                         $method_name,
-                        $returned_value->value->items
+                        $returned_value
                     ),
                     'at',
                     [

@@ -66,6 +66,7 @@ class MockVisitor extends NodeVisitorAbstract
                 case 'expectAt':
                     return $this->convertExpectAt($node);
                 case 'expect':
+                    return $this->convertExpect($node);
                 case 'expectAtLeastOnce':
                 case 'throwOn':
                 case 'throwAt':
@@ -220,6 +221,36 @@ class MockVisitor extends NodeVisitorAbstract
      * @return Node\Expr\MethodCall
      * @throws \Exception
      */
+    private function convertExpect(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 2) {
+            $method_name = (string) $node->args[0]->value->value;
+            $method_args = [];
+            if (isset($node->args[1])) {
+                if ($node->args[1]->value instanceof Node\Expr\ConstFetch && (string) $node->args[1]->value->name->parts[0] === 'false') {
+                    $method_args = [];
+                } elseif (isset($node->args[1]->value->items)) {
+                    $method_args = $node->args[1]->value->items;
+                } else {
+                    throw new \Exception("Unhandled construction at  L".$node->getLine());
+                }
+            }
+            return
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
+                    $method_name,
+                    $method_args
+                );
+        } else {
+            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+        }
+    }
+
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
     private function convertExpectOnce(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 3) {
@@ -262,8 +293,14 @@ class MockVisitor extends NodeVisitorAbstract
         if (count($node->args) === 2) {
             $method_name = (string) $node->args[0]->value->value;
             $count = [];
-            if ($node->args[1]->value instanceof Node\Scalar\LNumber) {
-                $count[] = $node->args[1];
+            if ($node->args[1]->value instanceof Node\Scalar) {
+                if ($node->args[1]->value instanceof Node\Scalar\LNumber) {
+                    $count[] = $node->args[1];
+                } else {
+                    $count[] = new Node\Arg(new Node\Scalar\LNumber((int) $node->args[1]->value->value));
+                }
+            } else {
+                throw new \Exception("Un-managed call count at L".$node->getLine());
             }
             return new Node\Expr\MethodCall(
                 new Node\Expr\MethodCall(

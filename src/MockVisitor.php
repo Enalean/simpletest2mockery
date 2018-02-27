@@ -23,6 +23,7 @@ namespace Reflector;
 
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
+use Psr\Log\LoggerInterface;
 
 class MockVisitor extends NodeVisitorAbstract
 {
@@ -30,6 +31,20 @@ class MockVisitor extends NodeVisitorAbstract
      * @var array
      */
     private $mocks = [];
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+    /**
+     * @var string
+     */
+    private $filepath;
+
+    public function __construct(LoggerInterface $logger, string $filepath)
+    {
+        $this->logger   = $logger;
+        $this->filepath = $filepath;
+    }
 
     /**
      * @param Node $node
@@ -54,6 +69,10 @@ class MockVisitor extends NodeVisitorAbstract
         }
 
         if ($node instanceof Node\Expr\MethodCall) {
+            if (! method_exists($node->name, '__toString')) {
+                $this->logger->warning("Method call on something we don't manage in $this->filepath at L".$node->getLine());
+                return $node;
+            }
             switch ((string)$node->name) {
                 case 'setReturnValue':
                 case 'setReturnReference':
@@ -72,7 +91,9 @@ class MockVisitor extends NodeVisitorAbstract
                 case 'expect':
                     return $this->convertExpect($node);
                 case 'expectAtLeastOnce':
+                    return $this->convertExpectAtLeastOnce($node);
                 case 'throwOn':
+                    return $this->convertThrowOn($node);
                 case 'throwAt':
                     throw new \Exception("Implementation is missing for ".(string)$node->name." at L".$node->getLine());
                     break;
@@ -136,9 +157,8 @@ class MockVisitor extends NodeVisitorAbstract
                 'class_name' => $class_name,
             ];
             return null;
-        } else {
-            throw new \Exception("Mock::generate form not supported at L".$node->getLine());
         }
+        $this->logger->error("Mock::generate form not supported in $this->filepath at L".$node->getLine());
         return $node;
     }
 
@@ -168,7 +188,7 @@ class MockVisitor extends NodeVisitorAbstract
     private function convertNewMock(Node\Expr\New_ $node)
     {
         if ($node->class instanceof Node\Expr\Variable) {
-            // Instantiation based on variables not managed
+            $this->logger->warning("Instantiation based on variables not managed in $this->filepath at L".$node->getLine());
             return $node;
         }
         $instantiated_class = (string) $node->class;
@@ -394,8 +414,74 @@ class MockVisitor extends NodeVisitorAbstract
                         new Node\Arg(new Node\Scalar\LNumber($timing))
                     ]
                 );
-        } else {
-            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
         }
+        throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+    }
+
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
+    private function convertExpectAtLeastOnce(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 3) {
+            $method_name = (string) $node->args[0]->value->value;
+            $method_args = [];
+            if (isset($node->args[1])) {
+                if ($node->args[1]->value instanceof Node\Expr\ConstFetch && (string) $node->args[1]->value->name->parts[0] === 'false') {
+                    $method_args = [];
+                } elseif (isset($node->args[1]->value->items)) {
+                    $method_args = $node->args[1]->value->items;
+                } else {
+                    throw new \Exception("Unhandled construction at  L".$node->getLine());
+                }
+            }
+            $message = [];
+            if (isset($node->args[2])) {
+                $message[] = $node->args[2];
+            }
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('expect'), [$node->var]),
+                    $method_name,
+                    $method_args
+                ),
+                'atLeastOnce',
+                $message
+            );
+        }
+        throw new \Exception("Un-managed number of arguments for convertExpectAtLeastOnce at L".$node->getLine());
+    }
+
+    private function convertThrowOn(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 3) {
+            $method_name = (string) $node->args[0]->value->value;
+            $exception = [];
+            if (isset($node->args[1])) {
+                $exception[] = $node->args[1];
+            }
+            $method_args = [];
+            if (isset($node->args[2])) {
+                if ($node->args[2]->value instanceof Node\Expr\ConstFetch && (string) $node->args[2]->value->name->parts[0] === 'false') {
+                    $method_args = [];
+                } elseif (isset($node->args[2]->value->items)) {
+                    $method_args = $node->args[2]->value->items;
+                } else {
+                    throw new \Exception("Unhandled construction at  L".$node->getLine());
+                }
+            }
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\FuncCall(new Node\Name('stub'), [$node->var]),
+                    $method_name,
+                    $method_args
+                ),
+                'throws',
+                $exception
+            );
+        }
+        throw new \Exception("Un-managed number of arguments for convertThrowOn at L".$node->getLine());
     }
 }

@@ -22,5 +22,11 @@
 
 require_once 'vendor/autoload.php';
 
-$reflector = new Reflector\Reflector();
+use Monolog\Logger;
+use Monolog\Handler\ErrorLogHandler;
+
+$log = new Logger('log');
+$log->pushHandler(new ErrorLogHandler());
+
+$reflector = new Reflector\Reflector($log);
 $reflector->run($argv[1]);

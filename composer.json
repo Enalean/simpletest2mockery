@@ -6,7 +6,8 @@
         }
       ],
     "require": {
-        "nikic/php-parser": "dev-master"
+        "nikic/php-parser": "dev-master",
+        "monolog/monolog": "^1.23"
     },
     "autoload": {
       "psr-4": {"Reflector\\": "src/"}

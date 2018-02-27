@@ -22,6 +22,7 @@
 namespace Reflector;
 
 use PhpParser\{Lexer, NodeTraverser, NodeVisitor, Parser, PrettyPrinter, NodeDumper};
+use Psr\Log\LoggerInterface;
 
 
 class Reflector
@@ -32,6 +33,15 @@ class Reflector
     private $oldTokens;
     private $oldStmts;
     private $newStmts;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
 
     public function run($filepath)
     {
@@ -59,7 +69,7 @@ class Reflector
 
     public function load(string $path)
     {
-        var_dump("process $path");
+        $this->logger->info("Processing $path");
         $lexer = new Lexer\Emulative([
             'usedAttributes' => [
                 'comments',
@@ -73,7 +83,7 @@ class Reflector
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
 
 
-        $traverser->addVisitor(new MockVisitor());
+        $traverser->addVisitor(new MockVisitor($this->logger, $path));
 
         $this->oldStmts = $parser->parse(file_get_contents($path));
         $this->oldTokens = $lexer->getTokens();

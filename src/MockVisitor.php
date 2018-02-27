@@ -262,7 +262,7 @@ class MockVisitor extends NodeVisitorAbstract
                 ]
             );
         } else {
-            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+            throw new \Exception("Un-managed number of arguments for returnAt at L".$node->getLine());
         }
     }
 
@@ -340,7 +340,10 @@ class MockVisitor extends NodeVisitorAbstract
      */
     private function convertCallCount(Node\Expr\MethodCall $node)
     {
-        if (count($node->args) === 2) {
+        if (count($node->args) >= 2) {
+            if (count($node->args) === 3) {
+                $this->logger->warning("Comment discarded on expectCallCount in $this->filepath at L".$node->getLine());
+            }
             $method_name = (string) $node->args[0]->value->value;
             $count = [];
             if ($node->args[1]->value instanceof Node\Scalar) {
@@ -360,9 +363,8 @@ class MockVisitor extends NodeVisitorAbstract
                 'count',
                 $count
             );
-        } else {
-            throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
         }
+        throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
     }
 
     /**

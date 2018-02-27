@@ -68,6 +68,13 @@ class MockVisitor extends NodeVisitorAbstract
             }
         }
 
+        if ($node instanceof Node\Expr\FuncCall && (
+            $node->name->parts[0] === 'mock' ||
+            $node->name->parts[0] === 'partial_mock' ||
+            $node->name->parts[0] === 'stub')) {
+            return $this->convertCallStringToClassConst($node);
+        }
+
         if ($node instanceof Node\Expr\MethodCall) {
             if (! method_exists($node->name, '__toString')) {
                 $this->logger->warning("Method call on something we don't manage in $this->filepath at L".$node->getLine());
@@ -104,6 +111,17 @@ class MockVisitor extends NodeVisitorAbstract
                     throw new \Exception("Those methods should not be used ".(string)$node->name);
             }
         }
+    }
+
+    private function convertCallStringToClassConst(Node\Expr\FuncCall $node)
+    {
+        if ($node->args[0]->value instanceof Node\Scalar\String_) {
+            $node->args[0]->value = new Node\Expr\ClassConstFetch(
+                new Node\Name((string) $node->args[0]->value->value),
+                new Node\Identifier('class')
+            );
+        }
+        return $node;
     }
 
     private function convertAssignRef(Node $node)

@@ -38,6 +38,10 @@ class MockVisitor extends NodeVisitorAbstract
      */
     public function leaveNode(Node $node)
     {
+        if ($node instanceof Node\Expr\AssignRef) {
+            return $this->convertAssignRef($node);
+        }
+
         if ($node instanceof Node\Expr\StaticCall) {
             return $this->recordGenerate($node);
         }
@@ -79,6 +83,23 @@ class MockVisitor extends NodeVisitorAbstract
                     throw new \Exception("Those methods should not be used ".(string)$node->name);
             }
         }
+    }
+
+    private function convertAssignRef(Node $node)
+    {
+        if ($node->expr instanceof Node\Expr\New_) {
+            return new Node\Expr\Assign(
+                $node->var,
+                $node->expr
+            );
+        }
+        if ($node->expr instanceof Node\Expr\FuncCall && $node->expr->name->parts[0] === 'mock') {
+            return new Node\Expr\Assign(
+                $node->var,
+                $node->expr
+            );
+        }
+        return $node;
     }
 
     private function getTargetClassName(string $instantiated_class)

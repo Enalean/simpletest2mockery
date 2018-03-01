@@ -21,7 +21,6 @@
 
 namespace Reflector;
 
-use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use Psr\Log\LoggerInterface;
@@ -103,10 +102,6 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
     {
         if ($node->args[0]->value instanceof Node\Scalar\String_) {
             return $this->getNewMockerySpy((string) $node->args[0]->value->value);
-            /*$node->args[0]->value = new Node\Expr\ClassConstFetch(
-                new Node\Name((string) $node->args[0]->value->value),
-                new Node\Identifier('class')
-            );*/
         }
         return $node;
     }
@@ -116,7 +111,30 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         if ($this->isStaticCall($node, 'Mock', 'generate')) {
             return $this->recordMockGenerate($node);
         }
+        if ($this->isStaticCall($node, 'Mock', 'generatePartial')) {
+            return $this->recordMockGeneratePartial($node);
+        }
         return $node;
+    }
+
+    private function recordMockGeneratePartial(Node\Expr\StaticCall $node)
+    {
+        if (count($node->args) === 3) {
+            if (! isset($node->args[0]->value->value)) {
+                throw new \Exception('Mock::generatePartial form not supported at L'.$node->getLine());
+            }
+            $class_name = (string) $node->args[0]->value->value;
+            $mock_name  = (string) $node->args[1]->value->value;
+            $mocked_methods = $node->args[2];
+            $this->mocks[$mock_name] = [
+                'class_name' => $class_name,
+                'args'       => new Node\Arg(
+                    new Node\Expr\Array_($mocked_methods->value->items)
+                ),
+            ];
+            return null;
+        }
+        throw new \Exception("Mock::generate form not supported at L".$node->getLine());
     }
 
     private function isStaticCall(Node\Expr\StaticCall $node, string $class, string $method)
@@ -151,8 +169,33 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         }
         $instantiated_class = (string) $node->class;
         if (isset($this->mocks[$instantiated_class])) {
-            return $this->getNewMockerySpy($this->mocks[$instantiated_class]['class_name']);
+            if (isset($this->mocks[$instantiated_class]['args'])) {
+                return $this->getNewMockeryPartialMock($this->mocks[$instantiated_class]['class_name']);
+            } else {
+                return $this->getNewMockerySpy($this->mocks[$instantiated_class]['class_name']);
+            }
         }
+    }
+
+    private function getNewMockeryPartialMock(string $class_name)
+    {
+        return
+            new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\StaticCall(
+                        new Node\Name('\Mockery'),
+                        new Node\Name('mock'),
+                        [
+                            new Node\Expr\ClassConstFetch(
+                                new Node\Name($class_name),
+                                new Node\Identifier('class')
+                            )
+                        ]
+                    ),
+                    'makePartial'
+                ),
+                'shouldAllowMockingProtectedMethods'
+            );
     }
 
     private function getNewMockerySpy(string $class_name)

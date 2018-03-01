@@ -84,7 +84,7 @@ class Reflector
 
 
         //$traverser->addVisitor(new MockVisitor($this->logger, $path));
-        $traverser->addVisitor(new ParentNodeConnector());
+        //$traverser->addVisitor(new ParentNodeConnector());
         $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path));
 
         $this->oldStmts = $parser->parse(file_get_contents($path));

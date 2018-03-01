@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "940edc1227b9058b0f72cee98cb647c4",
-    "content-hash": "3f5ace095275783271be86c3e2192c06",
+    "hash": "061fe5ec0dae4591ca6544f605183abf",
+    "content-hash": "6ee65397027807de9defde69b4d93034",
     "packages": [
         {
             "name": "monolog/monolog",
@@ -87,16 +87,16 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "dev-master",
+            "version": "v4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "8d1e86b47f8acab8a80ade4cbf7495ba48722385"
+                "reference": "9c18e3db49fa469f5feffe40dbd7b1ec2b61e41f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/8d1e86b47f8acab8a80ade4cbf7495ba48722385",
-                "reference": "8d1e86b47f8acab8a80ade4cbf7495ba48722385",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/9c18e3db49fa469f5feffe40dbd7b1ec2b61e41f",
+                "reference": "9c18e3db49fa469f5feffe40dbd7b1ec2b61e41f",
                 "shasum": ""
             },
             "require": {
@@ -134,10 +134,10 @@
                 "php"
             ],
             "support": {
-                "source": "https://github.com/nikic/PHP-Parser/tree/master",
+                "source": "https://github.com/nikic/PHP-Parser/tree/v4.0.0",
                 "issues": "https://github.com/nikic/PHP-Parser/issues"
             },
-            "time": "2018-02-08 16:17:32"
+            "time": "2018-02-28 20:39:30"
         },
         {
             "name": "psr/log",
@@ -190,9 +190,7 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "nikic/php-parser": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],

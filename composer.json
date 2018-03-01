@@ -6,7 +6,7 @@
         }
       ],
     "require": {
-        "nikic/php-parser": "dev-master",
+        "nikic/php-parser": "^4",
         "monolog/monolog": "^1.23"
     },
     "autoload": {

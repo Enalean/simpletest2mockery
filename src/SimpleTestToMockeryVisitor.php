@@ -71,6 +71,11 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             }
         }
 
+        if ($node instanceof Node\Expr\FuncCall && (
+                $node->name->parts[0] === 'mock')) {
+            return $this->convertCallMockToMockerySpy($node);
+        }
+
         if ($node instanceof Node\Stmt\ClassMethod) {
             $stmts_new = [];
             $nb_stmts = count($node->stmts);
@@ -94,30 +99,16 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         return $node;
     }
 
-    private function stuffNodes(array &$mocked_var_stack, Node $node)
+    private function convertCallMockToMockerySpy(Node\Expr\FuncCall $node)
     {
-        if ($node instanceof Node\Expr\MethodCall) {
-            if (!method_exists($node->name, '__toString')) {
-                $this->logger->warning("Method call on something we don't manage in $this->filepath at L" . $node->getLine());
-                return $node;
-            }
-            switch ((string)$node->name) {
-                case 'setReturnValue':
-                case 'setReturnReference':
-                    return $this->convertReturn($mocked_var_stack, $node);
-                    break;
-
-                case 'expectOnce':
-                    return $this->convertExpectOnce($mocked_var_stack, $node);
-            }
+        if ($node->args[0]->value instanceof Node\Scalar\String_) {
+            return $this->getNewMockerySpy((string) $node->args[0]->value->value);
+            /*$node->args[0]->value = new Node\Expr\ClassConstFetch(
+                new Node\Name((string) $node->args[0]->value->value),
+                new Node\Identifier('class')
+            );*/
         }
         return $node;
-    }
-
-
-    private function getTargetClassName(string $instantiated_class)
-    {
-        return new Node\Name($this->mocks[$instantiated_class]['class_name'].'::class');
     }
 
     private function recordGenerate(Node\Expr\StaticCall $node)
@@ -160,9 +151,45 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         }
         $instantiated_class = (string) $node->class;
         if (isset($this->mocks[$instantiated_class])) {
-            return new Node\Expr\StaticCall(new Node\Name('\Mockery'), new Node\Name('spy'), [$this->getTargetClassName($instantiated_class)]);
+            return $this->getNewMockerySpy($this->mocks[$instantiated_class]['class_name']);
         }
     }
+
+    private function getNewMockerySpy(string $class_name)
+    {
+        return
+            new Node\Expr\StaticCall(
+                new Node\Name('\Mockery'),
+                new Node\Name('spy'),
+                [
+                    new Node\Expr\ClassConstFetch(
+                        new Node\Name($class_name),
+                        new Node\Identifier('class')
+                    )
+                ]
+            );
+    }
+
+    private function stuffNodes(array &$mocked_var_stack, Node $node)
+    {
+        if ($node instanceof Node\Expr\MethodCall) {
+            if (!method_exists($node->name, '__toString')) {
+                $this->logger->warning("Method call on something we don't manage in $this->filepath at L" . $node->getLine());
+                return $node;
+            }
+            switch ((string)$node->name) {
+                case 'setReturnValue':
+                case 'setReturnReference':
+                    return $this->convertReturn($mocked_var_stack, $node);
+                    break;
+
+                case 'expectOnce':
+                    return $this->convertExpectOnce($mocked_var_stack, $node);
+            }
+        }
+        return $node;
+    }
+
 
     /**
      * @param Node\Expr\MethodCall $node

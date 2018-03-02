@@ -90,14 +90,6 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 );
     }
 
-    private function convertCallMockToMockerySpy(Node\Expr\FuncCall $node)
-    {
-        if ($node->args[0]->value instanceof Node\Scalar\String_) {
-            return $this->getNewMockerySpy((string) $node->args[0]->value->value);
-        }
-        return null;
-    }
-
     /**
      * @param Node\Expr\StaticCall $node
      * @return null|Node\Expr\StaticCall
@@ -295,14 +287,39 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             if ($node->expr instanceof Node\Expr\New_) {
                 $new_mock = $this->convertNewMock($node->expr);
             }
-            if ($node->expr instanceof Node\Expr\FuncCall && $node->expr->name->parts[0] === 'mock') {
-                $new_mock = $this->convertCallMockToMockerySpy($node->expr);
+            if ($node->expr instanceof Node\Expr\FuncCall) {
+                switch ($node->expr->name->parts[0]) {
+                    case 'mock':
+                        $new_mock = $this->convertCallMockToMockerySpy($node->expr);
+                        break;
+
+                    case 'partial_mock':
+                        $new_mock = $this->convertCallMockToMockeryPartial($node->expr);
+                }
+
             }
             if ($new_mock !== null) {
                 $node->expr = $new_mock;
                 $this->resetMethodStack($node->var);
             }
         }
+    }
+
+
+    private function convertCallMockToMockerySpy(Node\Expr\FuncCall $node)
+    {
+        if ($node->args[0]->value instanceof Node\Scalar\String_) {
+            return $this->getNewMockerySpy((string) $node->args[0]->value->value);
+        }
+        return null;
+    }
+
+    private function convertCallMockToMockeryPartial(Node\Expr\FuncCall $node)
+    {
+        if ($node->args[0]->value instanceof Node\Scalar\String_) {
+            return $this->getNewMockeryPartialMock((string) $node->args[0]->value->value);
+        }
+        return null;
     }
 
     /**

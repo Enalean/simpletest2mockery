@@ -74,12 +74,6 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         }
     }
 
-    private function resetMethodStack(Node\Expr\Variable $var)
-    {
-        $var_name = (string) $var->name;
-        unset($this->mocked_var_stack[$var_name]);
-    }
-
     private function convertCallMockToMockerySpy(Node\Expr\FuncCall $node)
     {
         if ($node->args[0]->value instanceof Node\Scalar\String_) {
@@ -329,7 +323,10 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 $this->logger->warning("Method call on something we don't manage in $this->filepath at L" . $node->getLine());
                 return;
             }
-            switch ((string)$node->name) {
+
+            $method_name = (string)$node->name;
+
+            switch ($method_name) {
                 case 'setReturnValue':
                 case 'setReturnReference':
                     return $this->convertReturn($node);
@@ -337,6 +334,20 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
                 case 'expectOnce':
                     return $this->convertExpectOnce($node);
+
+                case 'expectNever':
+                    return $this->convertExpectNever($node);
+
+                case 'setReturnValueAt':
+                case 'setReturnReferenceAt':
+                case 'expectCallCount':
+                case 'expectAt':
+                case 'expect':
+                case 'expectAtLeastOnce':
+                case 'throwOn':
+                case 'throwAt':
+                    //throw new \Exception("$method_name implementation missing in $this->filepath L".$node->getLine());
+                    break;
             }
         }
     }
@@ -360,11 +371,9 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 }
             }
 
-            $var_name = (string) $node->var->name;
-
-            $returns = $this->generateMockeryMock($node->var, $var_name, $method_name, $arguments);
+            $returns = $this->generateMockeryMock($node->var, $method_name, $arguments);
             $returns []= new Node\Expr\MethodCall(
-                new Node\Expr\Variable($this->mocked_var_stack[$var_name][$method_name]),
+                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
                 'andReturns',
                 [$returned_value->value]
             );
@@ -393,11 +402,9 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 }
             }
 
-            $var_name = (string) $node->var->name;
-
-            $returns = $this->generateMockeryMock($node->var, $var_name, $method_name, $method_args);
+            $returns = $this->generateMockeryMock($node->var, $method_name, $method_args);
             $returns []= new Node\Expr\MethodCall(
-                new Node\Expr\Variable($this->mocked_var_stack[$var_name][$method_name]),
+                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
                 'once'
             );
             return $returns;
@@ -405,18 +412,49 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
     }
 
-    private function generateMockeryMock(Node\Expr\Variable $var, string $original_var_name, string $method_name, array $method_args)
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
+    private function convertExpectNever(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 2) {
+            $method_name = (string) $node->args[0]->value->value;
+            $method_args = [];
+            if (isset($node->args[1])) {
+                $method_args[] = $node->args[1];
+            }
+
+            $returns = $this->generateMockeryMock($node->var, $method_name, $method_args);
+            $returns []= new Node\Expr\MethodCall(
+                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
+                'never'
+            );
+            return $returns;
+        }
+        throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+    }
+
+    /**
+     * @param Node\Expr $node
+     * @param string $method_name
+     * @param array $method_args
+     * @return array
+     * @throws \Exception
+     */
+    private function generateMockeryMock(Node\Expr $node, string $method_name, array $method_args)
     {
         $returns = [];
 
-        $mocked_method_var_name = $original_var_name.'_'.$method_name;
-        if (! isset($this->mocked_var_stack[$original_var_name][$method_name])) {
-            $this->mocked_var_stack[$original_var_name][$method_name] = $mocked_method_var_name;
+        $mocked_method_var_name = $this->getMockedVarName($node, $method_name);
+        if ($mocked_method_var_name === null) {
+            $this->generateMockedVarName($node, $method_name);
             $returns []=
                 new Node\Expr\Assign(
-                    new Node\Expr\Variable($mocked_method_var_name),
+                    new Node\Expr\Variable($this->getMockedVarName($node, $method_name)),
                     new Node\Expr\MethodCall(
-                        $var,
+                        $node,
                         'shouldReceive',
                         [
                             new Node\Arg(new Node\Scalar\String_($method_name))
@@ -427,13 +465,69 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         if (count($method_args) > 0) {
             $returns []=
                 new Node\Expr\MethodCall(
-                    new Node\Expr\Variable($mocked_method_var_name),
+                    new Node\Expr\Variable($this->getMockedVarName($node, $method_name)),
                     'with',
                     $method_args
                 );
         }
 
         return $returns;
+    }
+
+    private function getMockedVarName(Node\Expr $node, string $method_name)
+    {
+        if ($node instanceof Node\Expr\Variable) {
+            $original_var_name = (string) $node->name;
+            if (isset($this->mocked_var_stack[$original_var_name][$method_name])) {
+                return $this->mocked_var_stack[$original_var_name][$method_name];
+            }
+        } elseif ($node instanceof Node\Expr\PropertyFetch && (string) $node->var->name === 'this') {
+            $original_var_name = (string) $node->name->name;
+            if (isset($this->mocked_var_stack['this'][$original_var_name][$method_name])) {
+                return $this->mocked_var_stack['this'][$original_var_name][$method_name];
+            }
+        } else {
+            throw new \Exception('getMockedVarName on unhandled expression at L'.$node->getLine());
+        }
+        return null;
+    }
+
+    /**
+     * @param Node\Expr $node
+     * @param string $method_name
+     * @return string
+     * @throws \Exception
+     */
+    private function generateMockedVarName(Node\Expr $node, string $method_name)
+    {
+        if ($node instanceof Node\Expr\Variable) {
+            $original_var_name = (string) $node->name;
+            $this->mocked_var_stack[$original_var_name][$method_name] = $original_var_name.'_'.$method_name;
+            return $this->mocked_var_stack[$original_var_name][$method_name];
+        } elseif ($node instanceof Node\Expr\PropertyFetch && (string) $node->var->name === 'this') {
+            $original_var_name = (string) $node->name->name;
+            $this->mocked_var_stack['this'][$original_var_name][$method_name] = 'this_'.$original_var_name.'_'.$method_name;
+            return $this->mocked_var_stack['this'][$original_var_name][$method_name];
+        } else {
+            throw new \Exception('getMockedVarName on unhandled expression at L'.$node->getLine());
+        }
+    }
+
+    /**
+     * @param Node\Expr $node
+     * @throws \Exception
+     */
+    private function resetMethodStack(Node\Expr $node)
+    {
+        if ($node instanceof Node\Expr\Variable) {
+            $var_name = (string) $node->name;
+            unset($this->mocked_var_stack[$var_name]);
+        } elseif ($node instanceof Node\Expr\PropertyFetch && (string) $node->var->name === 'this') {
+            $var_name = (string) $node->name->name;
+            unset($this->mocked_var_stack['this'][$var_name]);
+        } else {
+            throw new \Exception('resetMethodStack on unhandled expression at L'.$node->getLine());
+        }
     }
 
     /**

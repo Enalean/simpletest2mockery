@@ -72,6 +72,32 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             $node->expr->left = new Node\Scalar\MagicConst\Dir();
         }
 
+        if ($node instanceof Node\Stmt\ClassMethod && $node->name->name === 'setUp') {
+            $setup_found = false;
+            foreach ($node->stmts as $stmt) {
+                if ($stmt->expr instanceof Node\Expr\StaticCall &&
+                    $stmt->expr->class->parts[0] === 'parent' &&
+                    $stmt->expr->name->name === 'setUp'
+                ) {
+                    $setup_found = true;
+                }
+            }
+            $new_stmts = [];
+            if (! $setup_found) {
+                $new_stmts []= new Node\Stmt\Expression(
+                    new Node\Expr\StaticCall(
+                        new Node\Name(
+                            'parent'
+                        ),
+                        new Node\Identifier(
+                            'setUp'
+                        )
+                    )
+                );
+                $node->stmts = array_merge($new_stmts, $node->stmts);
+            }
+        }
+
         if ($node instanceof Node\Expr\Assign) {
             $new_mock = null;
             if ($node->expr instanceof Node\Expr\New_) {

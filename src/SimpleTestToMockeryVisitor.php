@@ -1,4 +1,4 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  * Copyright (c) Enalean, 2018. All Rights Reserved.
  *
@@ -19,7 +19,7 @@
  *
  */
 
-namespace Reflector;
+namespace ST2Mockery;
 
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
@@ -28,8 +28,6 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Class SimpleTestToMockeryVisitor
- *
- * TODO: manage mock as class properties
  *
  * @package Reflector
  */

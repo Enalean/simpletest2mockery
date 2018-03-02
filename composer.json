@@ -1,15 +1,9 @@
 {
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/nikic/PHP-Parser"
-        }
-      ],
     "require": {
         "nikic/php-parser": "^4",
         "monolog/monolog": "^1.23"
     },
     "autoload": {
-      "psr-4": {"Reflector\\": "src/"}
+      "psr-4": {"ST2Mockery\\": "src/"}
     }
 }

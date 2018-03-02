@@ -28,5 +28,5 @@ use Monolog\Handler\ErrorLogHandler;
 $log = new Logger('log');
 $log->pushHandler(new ErrorLogHandler());
 
-$reflector = new Reflector\Reflector($log);
+$reflector = new \ST2Mockery\ST2Mockery($log);
 $reflector->run($argv[1]);

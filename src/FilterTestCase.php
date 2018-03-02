@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Copyright (c) Enalean, 2018. All Rights Reserved.
  *
@@ -19,7 +19,7 @@
  *
  */
 
-namespace Reflector;
+namespace ST2Mockery;
 
 class FilterTestCase extends \FilterIterator
 {

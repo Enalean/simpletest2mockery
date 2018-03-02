@@ -1,4 +1,4 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  * Copyright (c) Enalean, 2018. All Rights Reserved.
  *
@@ -19,13 +19,12 @@
  *
  */
 
-namespace Reflector;
+namespace ST2Mockery;
 
 use PhpParser\{Lexer, NodeTraverser, NodeVisitor, Parser, PrettyPrinter, NodeDumper};
 use Psr\Log\LoggerInterface;
 
-
-class Reflector
+class ST2Mockery
 {
     /**
      * @var string
@@ -55,15 +54,18 @@ class Reflector
             foreach ($rii as $file) {
                 $this->parseAndSave($file->getPathname());
             }
-        } else {
+            return;
+        } elseif (file_exists($filepath)) {
             $this->parseAndSave($filepath);
+            return;
         }
+        throw new \RuntimeException("$filepath is neither a file nor a directory");
     }
 
     private function parseAndSave(string $path)
     {
         $this->load($path);
-        //$this->doStuff();
+        //$this->printStatments();
         $this->save($path);
     }
 
@@ -90,7 +92,7 @@ class Reflector
         $this->newStmts = $traverser->traverse($this->oldStmts);
     }
 
-    public function doStuff()
+    public function printStatments()
     {
         $dumper = new NodeDumper;
         echo $dumper->dump($this->newStmts) . "\n";

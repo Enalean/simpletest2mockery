@@ -22,6 +22,7 @@
 namespace Reflector;
 
 use PhpParser\Node;
+use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use Psr\Log\LoggerInterface;
 
@@ -61,11 +62,15 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
      */
     public function leaveNode(Node $node)
     {
-        // TODO: remove static call via expression
-        if ($node instanceof Node\Expr\StaticCall) {
-            return $this->recordGenerate($node);
+        // Replace include dirname(__FILE__) by __DIR__
+        if ($node instanceof Node\Expr\Include_ &&
+            $node->expr instanceof Node\Expr\BinaryOp\Concat &&
+            $node->expr->left instanceof Node\Expr\FuncCall &&
+            (string) $node->expr->left->name->parts[0] === 'dirname' &&
+            $node->expr->left->args[0]->value instanceof Node\Scalar\MagicConst\File
+        ) {
+            $node->expr->left = new Node\Scalar\MagicConst\Dir();
         }
-
         // TODO: reset the method stack
         if ($node instanceof Node\Expr\New_) {
             $new_mock = $this->convertNewMock($node);
@@ -80,6 +85,13 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         }
 
         if ($node instanceof Node\Stmt\Expression) {
+            // TODO: remove static call via expression
+            if ($node->expr instanceof Node\Expr\StaticCall) {
+                if ($this->recordGenerate($node->expr) === null) {
+                    return NodeTraverser::REMOVE_NODE;
+                }
+            }
+
             $new_nodes = $this->stuffNodes($node->expr);
             if (is_array($new_nodes)) {
                 $new_stmts = [];

@@ -26,12 +26,10 @@ use Psr\Log\LoggerInterface;
 
 class ST2Mockery
 {
-    /**
-     * @var string
-     */
     private $oldTokens;
     private $oldStmts;
     private $newStmts;
+
     /**
      * @var LoggerInterface
      */

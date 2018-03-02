@@ -69,9 +69,25 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
         $this->convertMockGenerate($node);
 
+        if ($this->isATestMethod($node)) {
+            $this->mocked_var_stack = [];
+        }
+
         if ($node instanceof Node\Stmt\Expression) {
             return $this->inspectExpression($node);
         }
+    }
+
+    private function isATestMethod(Node $node)
+    {
+        return
+            $node instanceof Node\Stmt\ClassMethod
+            &&
+                (
+                    strpos((string)$node->name->name, 'test') !== false
+                    ||
+                    strpos((string)$node->name->name, 'it') !== false
+                );
     }
 
     private function convertCallMockToMockerySpy(Node\Expr\FuncCall $node)
@@ -270,6 +286,7 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
     /**
      * @param Node $node
+     * @throws \Exception
      */
     private function convertMockGenerate(Node $node)
     {
@@ -338,15 +355,17 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 case 'expectNever':
                     return $this->convertExpectNever($node);
 
+                case 'expectCallCount':
+                    return $this->convertCallCount($node);
+
                 case 'setReturnValueAt':
                 case 'setReturnReferenceAt':
-                case 'expectCallCount':
                 case 'expectAt':
                 case 'expect':
                 case 'expectAtLeastOnce':
                 case 'throwOn':
                 case 'throwAt':
-                    //throw new \Exception("$method_name implementation missing in $this->filepath L".$node->getLine());
+                    throw new \Exception("$method_name implementation missing in $this->filepath L".$node->getLine());
                     break;
             }
         }
@@ -430,6 +449,40 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             $returns []= new Node\Expr\MethodCall(
                 new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
                 'never'
+            );
+            return $returns;
+        }
+        throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+    }
+
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return array
+     * @throws \Exception
+     */
+    private function convertCallCount(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) >= 2) {
+            if (count($node->args) === 3) {
+                $this->logger->warning("Comment discarded on expectCallCount in $this->filepath at L".$node->getLine());
+            }
+            $method_name = (string) $node->args[0]->value->value;
+            $count = [];
+            if ($node->args[1]->value instanceof Node\Scalar) {
+                if ($node->args[1]->value instanceof Node\Scalar\LNumber) {
+                    $count[] = $node->args[1];
+                } else {
+                    $count[] = new Node\Arg(new Node\Scalar\LNumber((int) $node->args[1]->value->value));
+                }
+            } else {
+                throw new \Exception("Un-managed call count at L".$node->getLine());
+            }
+
+            $returns = $this->generateMockeryMock($node->var, $method_name, []);
+            $returns []= new Node\Expr\MethodCall(
+                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
+                'times',
+                $count
             );
             return $returns;
         }

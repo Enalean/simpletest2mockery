@@ -62,7 +62,6 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
      */
     public function leaveNode(Node $node)
     {
-        // Replace include dirname(__FILE__) by __DIR__
         if ($node instanceof Node\Expr\Include_ &&
             $node->expr instanceof Node\Expr\BinaryOp\Concat &&
             $node->expr->left instanceof Node\Expr\FuncCall &&
@@ -71,11 +70,13 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         ) {
             $node->expr->left = new Node\Scalar\MagicConst\Dir();
         }
-        // TODO: reset the method stack
-        if ($node instanceof Node\Expr\New_) {
-            $new_mock = $this->convertNewMock($node);
+        
+        if ($node instanceof Node\Expr\Assign && $node->expr instanceof Node\Expr\New_) {
+            $new_mock = $this->convertNewMock($node->expr);
             if ($new_mock !== null) {
-                return $new_mock;
+                $node->expr = $new_mock;
+                $var_name = (string) $node->var->name;
+                unset($this->mocked_var_stack[$var_name]);
             }
         }
 
@@ -85,7 +86,6 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         }
 
         if ($node instanceof Node\Stmt\Expression) {
-            // TODO: remove static call via expression
             if ($node->expr instanceof Node\Expr\StaticCall) {
                 if ($this->recordGenerate($node->expr) === null) {
                     return NodeTraverser::REMOVE_NODE;
@@ -306,7 +306,7 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
     {
         $returns = [];
 
-        $mocked_method_var_name = $original_var_name.'_mock_'.$method_name;
+        $mocked_method_var_name = $original_var_name.'_'.$method_name;
         if (! isset($this->mocked_var_stack[$original_var_name][$method_name])) {
             $this->mocked_var_stack[$original_var_name][$method_name] = $mocked_method_var_name;
             $returns []=

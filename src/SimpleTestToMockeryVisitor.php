@@ -63,98 +63,14 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
      */
     public function leaveNode(Node $node)
     {
-        if ($node instanceof Node\Expr\Include_ &&
-            $node->expr instanceof Node\Expr\BinaryOp\Concat &&
-            $node->expr->left instanceof Node\Expr\FuncCall &&
-            (string) $node->expr->left->name->parts[0] === 'dirname' &&
-            $node->expr->left->args[0]->value instanceof Node\Scalar\MagicConst\File
-        ) {
-            $node->expr->left = new Node\Scalar\MagicConst\Dir();
-        }
+        $this->convertDirnameFileToDirConst($node);
 
-        if ($node instanceof Node\Stmt\ClassMethod && $node->name->name === 'setUp') {
-            $setup_found = false;
-            foreach ($node->stmts as $stmt) {
-                if ($stmt->expr instanceof Node\Expr\StaticCall &&
-                    $stmt->expr->class->parts[0] === 'parent' &&
-                    $stmt->expr->name->name === 'setUp'
-                ) {
-                    $setup_found = true;
-                }
-            }
-            $new_stmts = [];
-            if (! $setup_found) {
-                $new_stmts []= new Node\Stmt\Expression(
-                    new Node\Expr\StaticCall(
-                        new Node\Name(
-                            'parent'
-                        ),
-                        new Node\Identifier(
-                            'setUp'
-                        )
-                    )
-                );
-                $node->stmts = array_merge($new_stmts, $node->stmts);
-            }
-        }
+        $this->normalizeSetUpTearDown($node);
 
-        if ($node instanceof Node\Stmt\ClassMethod && $node->name->name === 'tearDown') {
-            $teardown_found = false;
-            foreach ($node->stmts as $stmt) {
-                if ($stmt->expr instanceof Node\Expr\StaticCall &&
-                    $stmt->expr->class->parts[0] === 'parent' &&
-                    $stmt->expr->name->name === 'tearDown'
-                ) {
-                    $teardown_found = true;
-                }
-            }
-            if (! $teardown_found) {
-                $node->stmts []= new Node\Stmt\Expression(
-                    new Node\Expr\StaticCall(
-                        new Node\Name(
-                            'parent'
-                        ),
-                        new Node\Identifier(
-                            'tearDown'
-                        )
-                    )
-                );
-            }
-        }
-
-        if ($node instanceof Node\Expr\Assign) {
-            $new_mock = null;
-            if ($node->expr instanceof Node\Expr\New_) {
-                $new_mock = $this->convertNewMock($node->expr);
-            }
-            if ($node->expr instanceof Node\Expr\FuncCall && $node->expr->name->parts[0] === 'mock') {
-                $new_mock = $this->convertCallMockToMockerySpy($node->expr);
-            }
-            if ($new_mock !== null) {
-                $node->expr = $new_mock;
-                $this->resetMethodStack($node->var);
-            }
-        }
+        $this->convertMockGenerate($node);
 
         if ($node instanceof Node\Stmt\Expression) {
-            if ($node->expr instanceof Node\Expr\StaticCall) {
-                if ($this->recordGenerate($node->expr) === null) {
-                    return NodeTraverser::REMOVE_NODE;
-                }
-            }
-
-            $new_nodes = $this->stuffNodes($node->expr);
-            if (is_array($new_nodes)) {
-                $new_stmts = [];
-                $nb_nodes = count($new_nodes);
-                for ($i = 0; $i < $nb_nodes; $i++) {
-                    $new_stmts []= new Node\Stmt\Expression($new_nodes[$i]);
-                }
-                $new_stmts[($nb_nodes - 1)]->setAttributes($node->getAttributes());
-                return $new_stmts;
-            } elseif ($new_nodes instanceof Node\Expr) {
-                return new Node\Stmt\Expression($new_nodes, $node->getAttributes());
-            }
+            return $this->inspectExpression($node);
         }
     }
 
@@ -172,6 +88,11 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         return null;
     }
 
+    /**
+     * @param Node\Expr\StaticCall $node
+     * @return null|Node\Expr\StaticCall
+     * @throws \Exception
+     */
     private function recordGenerate(Node\Expr\StaticCall $node)
     {
         if ($this->isStaticCall($node, 'Mock', 'generate')) {
@@ -183,6 +104,11 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         return $node;
     }
 
+    /**
+     * @param Node\Expr\StaticCall $node
+     * @return null
+     * @throws \Exception
+     */
     private function recordMockGeneratePartial(Node\Expr\StaticCall $node)
     {
         if (count($node->args) === 3) {
@@ -236,9 +162,8 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         if (isset($this->mocks[$instantiated_class])) {
             if (isset($this->mocks[$instantiated_class]['args'])) {
                 return $this->getNewMockeryPartialMock($this->mocks[$instantiated_class]['class_name']);
-            } else {
-                return $this->getNewMockerySpy($this->mocks[$instantiated_class]['class_name']);
             }
+            return $this->getNewMockerySpy($this->mocks[$instantiated_class]['class_name']);
         }
     }
 
@@ -278,12 +203,131 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             );
     }
 
-    private function stuffNodes(Node $node)
+    /**
+     * @param Node $node
+     */
+    private function convertDirnameFileToDirConst(Node $node)
+    {
+        if ($node instanceof Node\Expr\Include_ &&
+            $node->expr instanceof Node\Expr\BinaryOp\Concat &&
+            $node->expr->left instanceof Node\Expr\FuncCall &&
+            (string)$node->expr->left->name->parts[0] === 'dirname' &&
+            $node->expr->left->args[0]->value instanceof Node\Scalar\MagicConst\File
+        ) {
+            $node->expr->left = new Node\Scalar\MagicConst\Dir();
+        }
+    }
+
+    /**
+     * @param Node $node
+     */
+    private function normalizeSetUpTearDown(Node $node)
+    {
+        if ($node instanceof Node\Stmt\ClassMethod && $node->name->name === 'setUp') {
+            $setup_found = false;
+            foreach ($node->stmts as $stmt) {
+                if ($stmt->expr instanceof Node\Expr\StaticCall &&
+                    $stmt->expr->class->parts[0] === 'parent' &&
+                    $stmt->expr->name->name === 'setUp'
+                ) {
+                    $setup_found = true;
+                }
+            }
+            $new_stmts = [];
+            if (!$setup_found) {
+                $new_stmts [] = new Node\Stmt\Expression(
+                    new Node\Expr\StaticCall(
+                        new Node\Name(
+                            'parent'
+                        ),
+                        new Node\Identifier(
+                            'setUp'
+                        )
+                    )
+                );
+                $node->stmts = array_merge($new_stmts, $node->stmts);
+            }
+        }
+
+        if ($node instanceof Node\Stmt\ClassMethod && $node->name->name === 'tearDown') {
+            $teardown_found = false;
+            foreach ($node->stmts as $stmt) {
+                if ($stmt->expr instanceof Node\Expr\StaticCall &&
+                    $stmt->expr->class->parts[0] === 'parent' &&
+                    $stmt->expr->name->name === 'tearDown'
+                ) {
+                    $teardown_found = true;
+                }
+            }
+            if (!$teardown_found) {
+                $node->stmts [] = new Node\Stmt\Expression(
+                    new Node\Expr\StaticCall(
+                        new Node\Name(
+                            'parent'
+                        ),
+                        new Node\Identifier(
+                            'tearDown'
+                        )
+                    )
+                );
+            }
+        }
+    }
+
+    /**
+     * @param Node $node
+     */
+    private function convertMockGenerate(Node $node)
+    {
+        if ($node instanceof Node\Expr\Assign) {
+            $new_mock = null;
+            if ($node->expr instanceof Node\Expr\New_) {
+                $new_mock = $this->convertNewMock($node->expr);
+            }
+            if ($node->expr instanceof Node\Expr\FuncCall && $node->expr->name->parts[0] === 'mock') {
+                $new_mock = $this->convertCallMockToMockerySpy($node->expr);
+            }
+            if ($new_mock !== null) {
+                $node->expr = $new_mock;
+                $this->resetMethodStack($node->var);
+            }
+        }
+    }
+
+    /**
+     * @param Node $node
+     * @return array|int|Node\Stmt\Expression
+     * @throws \Exception
+     */
+    private function inspectExpression(Node $node)
+    {
+        if ($node->expr instanceof Node\Expr\StaticCall) {
+            if ($this->recordGenerate($node->expr) === null) {
+                return NodeTraverser::REMOVE_NODE;
+            }
+        }
+
+        $new_node = $this->convertNode($node->expr);
+        if (is_array($new_node)) {
+            return $this->convertNodesToExpressions($node, $new_node);
+        } elseif ($new_node instanceof Node\Expr) {
+            return new Node\Stmt\Expression($new_node, $node->getAttributes());
+        } elseif ($new_node !== null) {
+            throw new \Exception('Return of convertNode not handled');
+        }
+    }
+
+    /**
+     * @param Node $node
+     * @return array|Node\Expr\MethodCall|void
+     * @throws \Exception
+     */
+    private function convertNode(Node $node)
     {
         if ($node instanceof Node\Expr\MethodCall) {
             if (!method_exists($node->name, '__toString')) {
                 $this->logger->warning("Method call on something we don't manage in $this->filepath at L" . $node->getLine());
-                return $node;
+                return;
             }
             switch ((string)$node->name) {
                 case 'setReturnValue':
@@ -295,13 +339,11 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                     return $this->convertExpectOnce($node);
             }
         }
-        return $node;
     }
-
 
     /**
      * @param Node\Expr\MethodCall $node
-     * @return Node\Expr\MethodCall
+     * @return array
      * @throws \Exception
      */
     private function convertReturn(Node\Expr\MethodCall $node)
@@ -327,11 +369,15 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 [$returned_value->value]
             );
             return $returns;
-
         }
         throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
     }
 
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return array
+     * @throws \Exception
+     */
     private function convertExpectOnce(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 3) {
@@ -388,5 +434,21 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         }
 
         return $returns;
+    }
+
+    /**
+     * @param Node $original_node
+     * @param array $new_node
+     * @return array
+     */
+    private function convertNodesToExpressions(Node $original_node, array $new_node)
+    {
+        $new_stmts = [];
+        $nb_nodes = count($new_node);
+        for ($i = 0; $i < $nb_nodes; $i++) {
+            $new_stmts [] = new Node\Stmt\Expression($new_node[$i]);
+        }
+        $new_stmts[($nb_nodes - 1)]->setAttributes($original_node->getAttributes());
+        return $new_stmts;
     }
 }

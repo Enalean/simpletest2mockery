@@ -45,6 +45,8 @@ class ST2Mockery
         if (! isset($argv[1])) {
             throw new \RuntimeException("Please provide a file or directory as first parameter");
         }
+        $filepath = $argv[1];
+
         if (is_dir($filepath)) {
             $rii = new FilterTestCase(
                 new \RecursiveIteratorIterator(

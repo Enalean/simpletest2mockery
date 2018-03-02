@@ -72,18 +72,18 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             $node->expr->left = new Node\Scalar\MagicConst\Dir();
         }
 
-        if ($node instanceof Node\Expr\Assign && $node->expr instanceof Node\Expr\New_) {
-            $new_mock = $this->convertNewMock($node->expr);
+        if ($node instanceof Node\Expr\Assign) {
+            $new_mock = null;
+            if ($node->expr instanceof Node\Expr\New_) {
+                $new_mock = $this->convertNewMock($node->expr);
+            }
+            if ($node->expr instanceof Node\Expr\FuncCall && $node->expr->name->parts[0] === 'mock') {
+                $new_mock = $this->convertCallMockToMockerySpy($node->expr);
+            }
             if ($new_mock !== null) {
                 $node->expr = $new_mock;
-                $var_name = (string) $node->var->name;
-                unset($this->mocked_var_stack[$var_name]);
+                $this->resetMethodStack($node->var);
             }
-        }
-
-        if ($node instanceof Node\Expr\FuncCall && (
-                $node->name->parts[0] === 'mock')) {
-            return $this->convertCallMockToMockerySpy($node);
         }
 
         if ($node instanceof Node\Stmt\Expression) {
@@ -108,12 +108,18 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         }
     }
 
+    private function resetMethodStack(Node\Expr\Variable $var)
+    {
+        $var_name = (string) $var->name;
+        unset($this->mocked_var_stack[$var_name]);
+    }
+
     private function convertCallMockToMockerySpy(Node\Expr\FuncCall $node)
     {
         if ($node->args[0]->value instanceof Node\Scalar\String_) {
             return $this->getNewMockerySpy((string) $node->args[0]->value->value);
         }
-        return $node;
+        return null;
     }
 
     private function recordGenerate(Node\Expr\StaticCall $node)

@@ -1,4 +1,4 @@
-<?php
+<?php  declare(strict_types=1);
 /**
  * Copyright (c) Enalean, 2018. All Rights Reserved.
  *
@@ -26,12 +26,13 @@ use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use Psr\Log\LoggerInterface;
 
-//$usDao  = \Mockery::spy(AdminDelegation_UserServiceDao::class);
-//$stuff = $usDao->shouldReceive('addUserService');
-//$stuff->with(112, AdminDelegation_Service::SHOW_PROJECT_ADMINS);
-//$stuff->once();
-//$stuff->andReturn(true);
-
+/**
+ * Class SimpleTestToMockeryVisitor
+ *
+ * TODO: manage mock as class properties
+ *
+ * @package Reflector
+ */
 class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 {
     /**
@@ -70,7 +71,7 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         ) {
             $node->expr->left = new Node\Scalar\MagicConst\Dir();
         }
-        
+
         if ($node instanceof Node\Expr\Assign && $node->expr instanceof Node\Expr\New_) {
             $new_mock = $this->convertNewMock($node->expr);
             if ($new_mock !== null) {

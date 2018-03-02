@@ -42,8 +42,11 @@ class ST2Mockery
         $this->logger = $logger;
     }
 
-    public function run($filepath)
+    public function run(array $argv)
     {
+        if (! isset($argv[1])) {
+            throw new \RuntimeException("Please provide a file or directory as first parameter");
+        }
         if (is_dir($filepath)) {
             $rii = new FilterTestCase(
                 new \RecursiveIteratorIterator(

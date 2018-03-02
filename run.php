@@ -28,5 +28,10 @@ use Monolog\Handler\ErrorLogHandler;
 $log = new Logger('log');
 $log->pushHandler(new ErrorLogHandler());
 
-$reflector = new \ST2Mockery\ST2Mockery($log);
-$reflector->run($argv[1]);
+try {
+    $reflector = new \ST2Mockery\ST2Mockery($log);
+    $reflector->run($argv);
+} catch (Exception $exception) {
+    $log->critical($exception->getMessage());
+    exit(1);
+}

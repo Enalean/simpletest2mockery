@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="./vendor/autoload.php" colors="true" processIsolation="true" stopOnFailure="true">
+    <testsuites>
+        <testsuite name="SimpleTest to Mockery">
+            <directory suffix="Test.php">tests</directory>
+            <exclude>tests/_fixtures</exclude>
+            <exclude>tests/_expected</exclude>
+        </testsuite>
+    </testsuites>
+</phpunit>

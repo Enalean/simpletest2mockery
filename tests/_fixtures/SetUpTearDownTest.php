@@ -24,11 +24,12 @@ class SetUpTearDownTest
     {
         // initialize stuff
         $this->stuff = 'foo';
+        unset($this->previous);
     }
 
     public function tearDown()
     {
         // clean
-        $this->stuff = '';
+        unset($this->stuff);
     }
 }

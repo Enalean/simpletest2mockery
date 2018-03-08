@@ -21,6 +21,12 @@ How to run it
 
 Then get a failure and contribute here with a PR to workaround the issue you got :)
 
+Launch tests with the following command:
+
+```bash
+vendor/bin/phpunit --configuration phpunit.xml
+```
+
 How
 ---
 

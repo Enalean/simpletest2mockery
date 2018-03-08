@@ -3,6 +3,8 @@ SimpleTest to Mockery
 
 An assistant to ease migration from SimpleTest mocks to Mockery ones.
 
+[![Build Status](https://travis-ci.org/Enalean/simpletest2mockery.svg?branch=master)](https://travis-ci.org/Enalean/simpletest2mockery)
+
 Rational
 --------
 

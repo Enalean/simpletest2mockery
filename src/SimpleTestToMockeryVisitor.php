@@ -226,7 +226,8 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         if ($node instanceof Node\Stmt\ClassMethod && $node->name->name === 'setUp') {
             $setup_found = false;
             foreach ($node->stmts as $stmt) {
-                if ($stmt->expr instanceof Node\Expr\StaticCall &&
+                if (isset($stmt->expr) &&
+                    $stmt->expr instanceof Node\Expr\StaticCall &&
                     $stmt->expr->class->parts[0] === 'parent' &&
                     $stmt->expr->name->name === 'setUp'
                 ) {
@@ -252,7 +253,8 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         if ($node instanceof Node\Stmt\ClassMethod && $node->name->name === 'tearDown') {
             $teardown_found = false;
             foreach ($node->stmts as $stmt) {
-                if ($stmt->expr instanceof Node\Expr\StaticCall &&
+                if (isset($stmt->expr) &&
+                    $stmt->expr instanceof Node\Expr\StaticCall &&
                     $stmt->expr->class->parts[0] === 'parent' &&
                     $stmt->expr->name->name === 'tearDown'
                 ) {

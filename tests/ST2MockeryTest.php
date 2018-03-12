@@ -61,7 +61,8 @@ class ST2MockeryTest extends TestCase
     {
         return [
             ['DirnameTest.php'],
-            ['SetUpTearDownTest.php']
+            ['SetUpTearDownTest.php'],
+            ['MockTest.php']
         ];
     }
 }

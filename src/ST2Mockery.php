@@ -103,7 +103,7 @@ class ST2Mockery
 
     public function save(string $path)
     {
-        $printer = new PrettyPrinter\Standard();
+        $printer = new PrettyPrinter\Standard(['shortArraySyntax' => true]);
         $newCode = $printer->printFormatPreserving($this->newStmts, $this->oldStmts, $this->oldTokens);
 
         file_put_contents($path, $newCode);

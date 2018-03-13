@@ -390,13 +390,14 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
     /**
      * @param Node\Expr\MethodCall $node
-     * @return array
+     * @return Node\Expr\MethodCall
      * @throws \Exception
      */
     private function convertReturn(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 3) {
-            $method_name = (string) $node->args[0]->value->value;
+            $method_name_expr = $node->args[0]->value;
+            $method_name = (string) $method_name_expr->value;
             $returned_value = $node->args[1];
             $arguments = [];
             if (isset($node->args[2])) {
@@ -407,45 +408,70 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 }
             }
 
-            $returns = $this->generateMockeryMock($node->var, $method_name, $arguments);
-            $returns []= new Node\Expr\MethodCall(
-                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
-                'andReturns',
-                [$returned_value->value]
+            $do_we_care_about_arguments = count($arguments) > 0;
+
+            if ($do_we_care_about_arguments) {
+                return new Node\Expr\MethodCall(
+                    new Node\Expr\MethodCall(
+                        new Node\Expr\MethodCall(
+                            $node->var,
+                            'allows'
+                        ),
+                        $method_name,
+                        $arguments
+                    ),
+                    'andReturns',
+                    [$returned_value->value]
+                );
+            }
+
+            return new Node\Expr\MethodCall(
+                $node->var,
+                'allows',
+                [
+                    new Node\Arg(
+                        new Node\Expr\Array_(
+                            [
+                                new Node\Expr\ArrayItem($returned_value->value, $method_name_expr)
+                            ]
+                        )
+                    )
+                ]
             );
-            return $returns;
         }
-        throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+        throw new \Exception("Un-managed number of arguments for setReturnValue at L".$node->getLine());
     }
 
     /**
      * @param Node\Expr\MethodCall $node
-     * @return array
+     * @return Node\Expr\MethodCall
      * @throws \Exception
      */
     private function convertExpectOnce(Node\Expr\MethodCall $node)
     {
         if (count($node->args) <= 3) {
             $method_name = (string) $node->args[0]->value->value;
-            $method_args = [];
+            $arguments = [];
             if (isset($node->args[1])) {
                 if ($node->args[1]->value instanceof Node\Expr\ConstFetch && (string) $node->args[1]->value->name->parts[0] === 'false') {
-                    $method_args = [];
+                    $arguments = [];
                 } elseif (isset($node->args[1]->value->items)) {
-                    $method_args = $node->args[1]->value->items;
+                    $arguments = $node->args[1]->value->items;
                 } else {
                     throw new \Exception("Unhandled construction at  L".$node->getLine());
                 }
             }
 
-            $returns = $this->generateMockeryMock($node->var, $method_name, $method_args);
-            $returns []= new Node\Expr\MethodCall(
-                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
-                'once'
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    $node->var,
+                    'expects'
+                ),
+                $method_name,
+                $arguments
             );
-            return $returns;
         }
-        throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+        throw new \Exception("Un-managed number of arguments for expectOnce at L".$node->getLine());
     }
 
     /**
@@ -469,7 +495,7 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             );
             return $returns;
         }
-        throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+        throw new \Exception("Un-managed number of arguments for expectNever at L".$node->getLine());
     }
 
     /**

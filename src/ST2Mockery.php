@@ -55,7 +55,11 @@ class ST2Mockery
                 )
             );
             foreach ($rii as $file) {
-                $this->parseAndSave($file->getPathname());
+                try {
+                    $this->parseAndSave($file->getPathname());
+                } catch (\Exception $exception) {
+                    $this->logger->error("Unable to convert {$file->getPathname()}: ".$exception->getMessage());
+                }
             }
             return;
         } elseif (file_exists($filepath)) {
@@ -103,7 +107,7 @@ class ST2Mockery
 
     public function save(string $path)
     {
-        $printer = new PrettyPrinter\Standard();
+        $printer = new PrettyPrinter\Standard(['shortArraySyntax' => true]);
         $newCode = $printer->printFormatPreserving($this->newStmts, $this->oldStmts, $this->oldTokens);
 
         file_put_contents($path, $newCode);

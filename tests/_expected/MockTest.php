@@ -31,24 +31,30 @@ class MockTest
     public function testMethodsAreConverted()
     {
         $foo = \Mockery::spy(Foo::class);
-        $foo->allows()->getTrackerById('param1', 'param2')->andReturns('result');
+        $foo_getTrackerById = $foo->shouldReceive('getTrackerById');
+        $foo_getTrackerById->with('param1', 'param2');
+        $foo_getTrackerById->andReturns('result');
     }
 
     public function itConvertsAlsoItMethods()
     {
         $foo = \Mockery::spy(Foo::class);
-        $foo->expects()->searchAncestorIds('param1');
-        $foo->allows(['searchAncestorIds' => 'result']);
+        $foo_searchAncestorIds = $foo->shouldReceive('searchAncestorIds');
+        $foo_searchAncestorIds->with('param1');
+        $foo_searchAncestorIds->once();
+        $foo_searchAncestorIds->andReturns('result');
     }
 
     public function testWhithOnceLaterInTheStack()
     {
         $foo = \Mockery::spy(Foo::class);
-        $foo->allows(['searchAncestorIds' => 'result']);
+        $foo_searchAncestorIds = $foo->shouldReceive('searchAncestorIds');
+        $foo_searchAncestorIds->andReturns('result');
 
         buildOtherStuff();
+        $foo_searchAncestorIds->with('param1');
 
-        $foo->expects()->searchAncestorIds('param1');
+        $foo_searchAncestorIds->once();
     }
 
     public function testWhithMockHelper()
@@ -59,17 +65,20 @@ class MockTest
     public function testPartialMock()
     {
         $baz = \Mockery::mock(Baz::class)->makePartial()->shouldAllowMockingProtectedMethods();
-        $baz->expects()->meth1();
+        $baz_meth1 = $baz->shouldReceive('meth1');
+        $baz_meth1->once();
     }
 
     public function testWithPartialMock()
     {
         $baz = \Mockery::mock(Food\Truck::class)->makePartial()->shouldAllowMockingProtectedMethods();
-        $baz->expects()->burger();
+        $baz_burger = $baz->shouldReceive('burger');
+        $baz_burger->once();
     }
 
     public function testWhenInitialisationIsDoneInSetUp()
     {
-        $this->tracker->allows(['getId' => 123]);
+        $this_tracker_getId = $this->tracker->shouldReceive('getId');
+        $this_tracker_getId->andReturns(123);
     }
 }

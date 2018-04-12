@@ -88,4 +88,11 @@ class MockTest
         $foo->shouldReceive('searchAncestorIds')->once()->andReturns('result');
         $foo->shouldReceive('searchAncestorIds')->once()->andReturns('faaaaa');
     }
+
+    public function testExpectAt()
+    {
+        $foo = \Mockery::spy(Foo::class);
+        $foo->shouldReceive('searchAncestorIds')->with(1, 2)->ordered();
+        $foo->shouldReceive('searchAncestorIds')->with(3, 4)->ordered();
+    }
 }

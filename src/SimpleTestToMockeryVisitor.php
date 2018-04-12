@@ -380,6 +380,7 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                     return $this->convertReturnAt($node);
 
                 case 'expectAt':
+                    return $this->convertExpectAt($node);
                 case 'expect':
                 case 'expectAtLeastOnce':
                 case 'throwOn':
@@ -531,6 +532,39 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         } else {
             throw new \Exception("Un-managed number of arguments for returnAt at L".$node->getLine());
         }
+    }
+
+    /**
+     * @param Node\Expr\MethodCall $node
+     * @return Node\Expr\MethodCall
+     * @throws \Exception
+     */
+    private function convertExpectAt(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 3) {
+            $timing         = (int) $node->args[0]->value->value;
+            $method_name    = (string) $node->args[1]->value->value;
+            if ($node->args[2]->value instanceof Node\Expr\ArrayDimFetch) {
+                $this->logger->error("Unsupported construction in $this->filepath at L".$node->getLine());
+                return $node;
+            } else {
+                $arguments = $node->args[2]->value->items;
+            }
+
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\MethodCall(
+                        $node->var,
+                        'shouldReceive',
+                        [new Node\Arg(new Node\Scalar\String_($method_name))]
+                    ),
+                    'with',
+                    $arguments
+                ),
+                'ordered'
+            );
+        }
+        throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
     }
 
     /**

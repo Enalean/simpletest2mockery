@@ -81,4 +81,11 @@ class MockTest
         $foo->setReturnValueAt(0, 'searchAncestorIds', 'result');
         $foo->setReturnValueAt(1, 'searchAncestorIds', 'faaaaa');
     }
+
+    public function testExpectAt()
+    {
+        $foo = new MockFoo();
+        $foo->expectAt(0, 'searchAncestorIds', array(1, 2));
+        $foo->expectAt(1, 'searchAncestorIds', array(3, 4));
+    }
 }

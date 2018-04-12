@@ -74,4 +74,11 @@ class MockTest
     {
         $this->tracker->setReturnValue('getId', 123);
     }
+
+    public function testReturnValueAtWithoutArguments()
+    {
+        $foo = new MockFoo();
+        $foo->setReturnValueAt(0, 'searchAncestorIds', 'result');
+        $foo->setReturnValueAt(1, 'searchAncestorIds', 'faaaaa');
+    }
 }

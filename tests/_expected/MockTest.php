@@ -81,4 +81,11 @@ class MockTest
         $this_tracker_getId = $this->tracker->shouldReceive('getId');
         $this_tracker_getId->andReturns(123);
     }
+
+    public function testReturnValueAtWithoutArguments()
+    {
+        $foo = \Mockery::spy(Foo::class);
+        $foo->shouldReceive('searchAncestorIds')->once()->andReturns('result');
+        $foo->shouldReceive('searchAncestorIds')->once()->andReturns('faaaaa');
+    }
 }

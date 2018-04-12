@@ -377,6 +377,8 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
                 case 'setReturnValueAt':
                 case 'setReturnReferenceAt':
+                    return $this->convertReturnAt($node);
+
                 case 'expectAt':
                 case 'expect':
                 case 'expectAtLeastOnce':
@@ -504,6 +506,31 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             return $returns;
         }
         throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+    }
+
+    private function convertReturnAt(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) <= 3) {
+            $count       = (int) $node->args[0]->value->value;
+            $method_name = (string) $node->args[1]->value->value;
+            $returned_value = $node->args[2];
+
+            return new Node\Expr\MethodCall(
+                new Node\Expr\MethodCall(
+                    new Node\Expr\MethodCall(
+                        $node->var,
+                        'shouldReceive',
+                        [new Node\Arg(new Node\Scalar\String_($method_name))]
+                    ),
+                    'once',
+                    []
+                ),
+                'andReturns',
+                [$returned_value]
+            );
+        } else {
+            throw new \Exception("Un-managed number of arguments for returnAt at L".$node->getLine());
+        }
     }
 
     /**

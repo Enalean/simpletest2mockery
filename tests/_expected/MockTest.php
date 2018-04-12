@@ -31,30 +31,22 @@ class MockTest
     public function testMethodsAreConverted()
     {
         $foo = \Mockery::spy(Foo::class);
-        $foo_getTrackerById = $foo->shouldReceive('getTrackerById');
-        $foo_getTrackerById->with('param1', 'param2');
-        $foo_getTrackerById->andReturns('result');
+        $foo->shouldReceive('getTrackerById')->with('param1', 'param2')->andReturns('result');
     }
 
     public function itConvertsAlsoItMethods()
     {
         $foo = \Mockery::spy(Foo::class);
-        $foo_searchAncestorIds = $foo->shouldReceive('searchAncestorIds');
-        $foo_searchAncestorIds->with('param1');
-        $foo_searchAncestorIds->once();
-        $foo_searchAncestorIds->andReturns('result');
+        $foo->shouldReceive('searchAncestorIds')->with('param1')->once()->andReturns('result');
     }
 
     public function testWhithOnceLaterInTheStack()
     {
         $foo = \Mockery::spy(Foo::class);
-        $foo_searchAncestorIds = $foo->shouldReceive('searchAncestorIds');
-        $foo_searchAncestorIds->andReturns('result');
 
         buildOtherStuff();
-        $foo_searchAncestorIds->with('param1');
 
-        $foo_searchAncestorIds->once();
+        $foo->shouldReceive('searchAncestorIds')->andReturns('result')->with('param1')->once();
     }
 
     public function testWhithMockHelper()
@@ -65,21 +57,18 @@ class MockTest
     public function testPartialMock()
     {
         $baz = \Mockery::mock(Baz::class)->makePartial()->shouldAllowMockingProtectedMethods();
-        $baz_meth1 = $baz->shouldReceive('meth1');
-        $baz_meth1->once();
+        $baz->shouldReceive('meth1')->once();
     }
 
     public function testWithPartialMock()
     {
         $baz = \Mockery::mock(Food\Truck::class)->makePartial()->shouldAllowMockingProtectedMethods();
-        $baz_burger = $baz->shouldReceive('burger');
-        $baz_burger->once();
+        $baz->shouldReceive('burger')->once();
     }
 
     public function testWhenInitialisationIsDoneInSetUp()
     {
-        $this_tracker_getId = $this->tracker->shouldReceive('getId');
-        $this_tracker_getId->andReturns(123);
+        $this->tracker->shouldReceive('getId')->andReturns(123);
     }
 
     public function testReturnValueAtWithoutArguments()
@@ -94,5 +83,24 @@ class MockTest
         $foo = \Mockery::spy(Foo::class);
         $foo->shouldReceive('searchAncestorIds')->with(1, 2)->ordered();
         $foo->shouldReceive('searchAncestorIds')->with(3, 4)->ordered();
+    }
+
+    public function testReturnSeveralMethodCalls()
+    {
+        $foo = \Mockery::spy(Foo::class);
+        $foo->shouldReceive('add')->andReturns('result');
+        $foo->shouldReceive('mul')->andReturns('faaaaa');
+    }
+
+    public function testExpectNeverWithoutArguments()
+    {
+        $foo = \Mockery::spy(Foo::class);
+        $foo->shouldReceive('searchAncestorIds')->never();
+    }
+
+    public function testExpectCallCount()
+    {
+        $foo = \Mockery::spy(Foo::class);
+        $foo->shouldReceive('searchAncestorIds')->times(2);
     }
 }

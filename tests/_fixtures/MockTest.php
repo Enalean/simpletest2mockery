@@ -88,4 +88,23 @@ class MockTest
         $foo->expectAt(0, 'searchAncestorIds', array(1, 2));
         $foo->expectAt(1, 'searchAncestorIds', array(3, 4));
     }
+
+    public function testReturnSeveralMethodCalls()
+    {
+        $foo = new MockFoo();
+        $foo->setReturnValue('add', 'result');
+        $foo->setReturnValue('mul', 'faaaaa');
+    }
+
+    public function testExpectNeverWithoutArguments()
+    {
+        $foo = new MockFoo();
+        $foo->expectNever('searchAncestorIds');
+    }
+
+    public function testExpectCallCount()
+    {
+        $foo = new MockFoo();
+        $foo->expectCallCount('searchAncestorIds', 2);
+    }
 }

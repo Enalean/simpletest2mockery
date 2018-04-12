@@ -91,12 +91,18 @@ class ST2Mockery
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
 
-        $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path));
+        $common = [];
+        $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path, $common));
 
         $this->oldStmts = $parser->parse(file_get_contents($path));
         $this->oldTokens = $lexer->getTokens();
 
         $this->newStmts = $traverser->traverse($this->oldStmts);
+
+        $tr2 = new NodeTraverser();
+        $tr2->addVisitor(new NodeRemovalVisitor($common));
+
+        $this->newStmts = $tr2->traverse($this->newStmts);
     }
 
     public function printStatments()

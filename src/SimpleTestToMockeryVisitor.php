@@ -21,6 +21,7 @@
 
 namespace ST2Mockery;
 
+use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
@@ -48,10 +49,19 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
     private $mocked_var_stack = [];
 
-    public function __construct(LoggerInterface $logger, string $filepath)
+    private $stuff_stack = [];
+    /**
+     * @var array
+     */
+    private $common;
+
+    private $c = 1;
+
+    public function __construct(LoggerInterface $logger, string $filepath, array &$common)
     {
         $this->logger   = $logger;
         $this->filepath = $filepath;
+        $this->common =& $common;
     }
 
     /**
@@ -69,11 +79,14 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
         if ($this->isATestMethod($node)) {
             $this->mocked_var_stack = [];
+            $this->stuff_stack = [];
         }
 
         if ($node instanceof Node\Stmt\Expression) {
             return $this->inspectExpression($node);
         }
+
+        return $this->convertNode($node);
     }
 
     private function isATestMethod(Node $node)
@@ -334,15 +347,6 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 return NodeTraverser::REMOVE_NODE;
             }
         }
-
-        $new_node = $this->convertNode($node->expr);
-        if (is_array($new_node)) {
-            return $this->convertNodesToExpressions($node, $new_node);
-        } elseif ($new_node instanceof Node\Expr) {
-            return new Node\Stmt\Expression($new_node, $node->getAttributes());
-        } elseif ($new_node !== null) {
-            throw new \Exception('Return of convertNode not handled');
-        }
     }
 
     /**
@@ -393,7 +397,7 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
     /**
      * @param Node\Expr\MethodCall $node
-     * @return array
+     * @return Node
      * @throws \Exception
      */
     private function convertReturn(Node\Expr\MethodCall $node)
@@ -410,20 +414,21 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 }
             }
 
-            $returns = $this->generateMockeryMock($node->var, $method_name, $arguments);
-            $returns []= new Node\Expr\MethodCall(
-                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
-                'andReturns',
-                [$returned_value->value]
+            return $this->generateMockeryMock(
+                $node->var,
+                $method_name,
+                $arguments,
+                function ($new_node) use ($returned_value) {
+                    return new Node\Expr\MethodCall($new_node, 'andReturns', [$returned_value->value]);
+                }
             );
-            return $returns;
         }
         throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
     }
 
     /**
      * @param Node\Expr\MethodCall $node
-     * @return array
+     * @return Node
      * @throws \Exception
      */
     private function convertExpectOnce(Node\Expr\MethodCall $node)
@@ -441,12 +446,14 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 }
             }
 
-            $returns = $this->generateMockeryMock($node->var, $method_name, $method_args);
-            $returns []= new Node\Expr\MethodCall(
-                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
-                'once'
+            return $this->generateMockeryMock(
+                $node->var,
+                $method_name,
+                $method_args,
+                function($new_node) {
+                    return new Node\Expr\MethodCall($new_node, 'once');
+                }
             );
-            return $returns;
         }
         throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
     }
@@ -465,19 +472,21 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 $method_args[] = $node->args[1];
             }
 
-            $returns = $this->generateMockeryMock($node->var, $method_name, $method_args);
-            $returns []= new Node\Expr\MethodCall(
-                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
-                'never'
+            return $this->generateMockeryMock(
+                $node->var,
+                $method_name,
+                $method_args,
+                function($new_node) {
+                    return new Node\Expr\MethodCall($new_node, 'never');
+                }
             );
-            return $returns;
         }
         throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
     }
 
     /**
      * @param Node\Expr\MethodCall $node
-     * @return array
+     * @return Node\Expr\MethodCall
      * @throws \Exception
      */
     private function convertCallCount(Node\Expr\MethodCall $node)
@@ -498,13 +507,14 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 throw new \Exception("Un-managed call count at L".$node->getLine());
             }
 
-            $returns = $this->generateMockeryMock($node->var, $method_name, []);
-            $returns []= new Node\Expr\MethodCall(
-                new Node\Expr\Variable($this->getMockedVarName($node->var, $method_name)),
-                'times',
-                $count
+            return $this->generateMockeryMock(
+                $node->var,
+                $method_name,
+                [],
+                function($new_node) use ($count) {
+                    return new Node\Expr\MethodCall($new_node, 'times', $count);
+                }
             );
-            return $returns;
         }
         throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
     }
@@ -571,77 +581,66 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
      * @param Node\Expr $node
      * @param string $method_name
      * @param array $method_args
-     * @return array
+     * @return Node\Expr\MethodCall
      * @throws \Exception
      */
-    private function generateMockeryMock(Node\Expr $node, string $method_name, array $method_args)
+    private function generateMockeryMock(Node\Expr $node, string $method_name, array $method_args, callable $lambda)
     {
-        $returns = [];
-
-        $mocked_method_var_name = $this->getMockedVarName($node, $method_name);
-        if ($mocked_method_var_name === null) {
-            $this->generateMockedVarName($node, $method_name);
-            $returns []=
-                new Node\Expr\Assign(
-                    new Node\Expr\Variable($this->getMockedVarName($node, $method_name)),
-                    new Node\Expr\MethodCall(
-                        $node,
-                        'shouldReceive',
-                        [
-                            new Node\Arg(new Node\Scalar\String_($method_name))
-                        ]
-                    )
-                );
+        if ($node instanceof Node\Expr\Variable) {
+            $var_name = (string) $node->name;
+            if (! isset($this->mocked_var_stack[$var_name][$method_name])) {
+                $new_node = $this->generateShouldReceive($node, $method_name, $method_args);
+                $new_node = $this->generateWith($new_node, $method_args);
+                $new_node = $lambda($new_node);
+            } else {
+                $old_node = $this->mocked_var_stack[$var_name][$method_name];
+                $this->common[] = $old_node->getAttribute('X-Id');
+                $new_node = $this->generateWith($old_node, $method_args);
+                $new_node = $lambda($new_node);
+            }
+            $new_node->setAttribute('X-Id', $this->c++);
+            $this->mocked_var_stack[$var_name][$method_name] = $new_node;
+            return $new_node;
+        } elseif ($node instanceof Node\Expr\PropertyFetch && (string) $node->var->name === 'this') {
+            $var_name = (string) $node->name->name;
+            if (! isset($this->mocked_var_stack['this'][$var_name][$method_name])) {
+                $new_node = $this->generateShouldReceive($node, $method_name, $method_args);
+                $new_node = $this->generateWith($new_node, $method_args);
+                $new_node = $lambda($new_node);
+            } else {
+                $old_node = $this->mocked_var_stack['this'][$var_name][$method_name];
+                $this->common[] = $old_node->getAttribute('X-Id');
+                $new_node = $this->generateWith($old_node, $method_args);
+                $new_node = $lambda($new_node);
+            }
+            $new_node->setAttribute('X-Id', $this->c++);
+            $this->mocked_var_stack['this'][$var_name][$method_name] = $new_node;
+            return $new_node;
         }
+        throw new \Exception('Unsupported node type: '.get_class($node));
+    }
+
+    private function generateShouldReceive(Node\Expr $variable, string $method_name, array $method_args)
+    {
+        return new Node\Expr\MethodCall(
+            $variable,
+            'shouldReceive',
+            [
+                new Node\Arg(new Node\Scalar\String_($method_name))
+            ]
+        );
+    }
+
+    private function generateWith(Node\Expr\MethodCall $node, array $method_args)
+    {
         if (count($method_args) > 0) {
-            $returns []=
-                new Node\Expr\MethodCall(
-                    new Node\Expr\Variable($this->getMockedVarName($node, $method_name)),
-                    'with',
-                    $method_args
-                );
+            return new Node\Expr\MethodCall(
+                $node,
+                'with',
+                $method_args
+            );
         }
-
-        return $returns;
-    }
-
-    private function getMockedVarName(Node\Expr $node, string $method_name)
-    {
-        if ($node instanceof Node\Expr\Variable) {
-            $original_var_name = (string) $node->name;
-            if (isset($this->mocked_var_stack[$original_var_name][$method_name])) {
-                return $this->mocked_var_stack[$original_var_name][$method_name];
-            }
-        } elseif ($node instanceof Node\Expr\PropertyFetch && (string) $node->var->name === 'this') {
-            $original_var_name = (string) $node->name->name;
-            if (isset($this->mocked_var_stack['this'][$original_var_name][$method_name])) {
-                return $this->mocked_var_stack['this'][$original_var_name][$method_name];
-            }
-        } else {
-            throw new \Exception('getMockedVarName on unhandled expression at L'.$node->getLine());
-        }
-        return null;
-    }
-
-    /**
-     * @param Node\Expr $node
-     * @param string $method_name
-     * @return string
-     * @throws \Exception
-     */
-    private function generateMockedVarName(Node\Expr $node, string $method_name)
-    {
-        if ($node instanceof Node\Expr\Variable) {
-            $original_var_name = (string) $node->name;
-            $this->mocked_var_stack[$original_var_name][$method_name] = $original_var_name.'_'.$method_name;
-            return $this->mocked_var_stack[$original_var_name][$method_name];
-        } elseif ($node instanceof Node\Expr\PropertyFetch && (string) $node->var->name === 'this') {
-            $original_var_name = (string) $node->name->name;
-            $this->mocked_var_stack['this'][$original_var_name][$method_name] = 'this_'.$original_var_name.'_'.$method_name;
-            return $this->mocked_var_stack['this'][$original_var_name][$method_name];
-        } else {
-            throw new \Exception('getMockedVarName on unhandled expression at L'.$node->getLine());
-        }
+        return $node;
     }
 
     /**
@@ -659,21 +658,5 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         } else {
             throw new \Exception('resetMethodStack on unhandled expression at L'.$node->getLine());
         }
-    }
-
-    /**
-     * @param Node $original_node
-     * @param array $new_node
-     * @return array
-     */
-    private function convertNodesToExpressions(Node $original_node, array $new_node)
-    {
-        $new_stmts = [];
-        $nb_nodes = count($new_node);
-        for ($i = 0; $i < $nb_nodes; $i++) {
-            $new_stmts [] = new Node\Stmt\Expression($new_node[$i]);
-        }
-        $new_stmts[($nb_nodes - 1)]->setAttributes($original_node->getAttributes());
-        return $new_stmts;
     }
 }

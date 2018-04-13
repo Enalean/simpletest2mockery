@@ -13,17 +13,17 @@ class NodeRemovalVisitor extends NodeVisitorAbstract
     /**
      * @var array
      */
-    private $common;
+    private $nodes_to_delete;
 
-    public function __construct(array &$common)
+    public function __construct(array &$nodes_to_delete)
     {
-        $this->common =& $common;
+        $this->nodes_to_delete =& $nodes_to_delete;
     }
 
 
     public function leaveNode(Node $node)
     {
-        if ($node instanceof Node\Stmt\Expression && in_array($node->expr->getAttribute('X-Id'), $this->common)) {
+        if ($node instanceof Node\Stmt\Expression && in_array($node->expr->getAttribute('X-Id'), $this->nodes_to_delete)) {
             return NodeTraverser::REMOVE_NODE;
         }
         return $node;

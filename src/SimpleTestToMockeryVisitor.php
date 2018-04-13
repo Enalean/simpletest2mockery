@@ -49,15 +49,15 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
     /**
      * @var array
      */
-    private $common;
+    private $nodes_to_delete;
 
-    private $c = 1;
+    private $nodeUniqueId = 1;
 
-    public function __construct(LoggerInterface $logger, string $filepath, array &$common)
+    public function __construct(LoggerInterface $logger, string $filepath, array &$nodes_to_delete)
     {
-        $this->logger   = $logger;
-        $this->filepath = $filepath;
-        $this->common =& $common;
+        $this->logger          = $logger;
+        $this->filepath        = $filepath;
+        $this->nodes_to_delete =& $nodes_to_delete;
     }
 
     /**
@@ -332,11 +332,11 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 $new_node = $lambda($new_node);
             } else {
                 $old_node = $this->mocked_var_stack[$var_name][$method_name];
-                $this->common[] = $old_node->getAttribute('X-Id');
+                $this->nodes_to_delete[] = $old_node->getAttribute('X-Id');
                 $new_node = $this->generateWith($old_node, $method_args);
                 $new_node = $lambda($new_node);
             }
-            $new_node->setAttribute('X-Id', $this->c++);
+            $new_node->setAttribute('X-Id', $this->nodeUniqueId++);
             $this->mocked_var_stack[$var_name][$method_name] = $new_node;
             return $new_node;
         } elseif ($node instanceof Node\Expr\PropertyFetch && (string) $node->var->name === 'this') {
@@ -347,11 +347,11 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                 $new_node = $lambda($new_node);
             } else {
                 $old_node = $this->mocked_var_stack['this'][$var_name][$method_name];
-                $this->common[] = $old_node->getAttribute('X-Id');
+                $this->nodes_to_delete[] = $old_node->getAttribute('X-Id');
                 $new_node = $this->generateWith($old_node, $method_args);
                 $new_node = $lambda($new_node);
             }
-            $new_node->setAttribute('X-Id', $this->c++);
+            $new_node->setAttribute('X-Id', $this->nodeUniqueId++);
             $this->mocked_var_stack['this'][$var_name][$method_name] = $new_node;
             return $new_node;
         }

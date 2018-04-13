@@ -91,8 +91,8 @@ class ST2Mockery
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
 
-        $common = [];
-        $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path, $common));
+        $nodes_to_delete = [];
+        $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path, $nodes_to_delete));
         $traverser->addVisitor(new DirenameToDIRContVisitor());
         $traverser->addVisitor(new NormalizeSetUpAndTearDownVisitor());
         $traverser->addVisitor(new ConvertMockGenerationVisitor($this->logger, $path));
@@ -102,10 +102,10 @@ class ST2Mockery
 
         $this->newStmts = $traverser->traverse($this->oldStmts);
 
-        $tr2 = new NodeTraverser();
-        $tr2->addVisitor(new NodeRemovalVisitor($common));
+        $traverser2 = new NodeTraverser();
+        $traverser2->addVisitor(new NodeRemovalVisitor($nodes_to_delete));
 
-        $this->newStmts = $tr2->traverse($this->newStmts);
+        $this->newStmts = $traverser2->traverse($this->newStmts);
     }
 
     public function printStatments()

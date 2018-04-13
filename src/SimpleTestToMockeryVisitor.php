@@ -71,8 +71,6 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
      */
     public function leaveNode(Node $node)
     {
-        $this->convertDirnameFileToDirConst($node);
-
         $this->normalizeSetUpTearDown($node);
 
         $this->convertMockGenerate($node);
@@ -214,21 +212,6 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
                     )
                 ]
             );
-    }
-
-    /**
-     * @param Node $node
-     */
-    private function convertDirnameFileToDirConst(Node $node)
-    {
-        if ($node instanceof Node\Expr\Include_ &&
-            $node->expr instanceof Node\Expr\BinaryOp\Concat &&
-            $node->expr->left instanceof Node\Expr\FuncCall &&
-            (string)$node->expr->left->name->parts[0] === 'dirname' &&
-            $node->expr->left->args[0]->value instanceof Node\Scalar\MagicConst\File
-        ) {
-            $node->expr->left = new Node\Scalar\MagicConst\Dir();
-        }
     }
 
     /**

@@ -20,6 +20,7 @@
 
 require_once 'bootstrap.php';
 Mock::generate('Foo');
+Mock::generate('Bar');
 Mock::generatePartial('Baz', 'BazTestVersion', array('meth1',
     'meth2'));
 
@@ -106,5 +107,16 @@ class MockTest
     {
         $foo = new MockFoo();
         $foo->expectCallCount('searchAncestorIds', 2);
+    }
+
+    public function testMultipleReturns()
+    {
+        $foo = new MockFoo($this);
+
+        $bar01 = new MockBar($this);
+        $foo->setReturnReference('searchByTitle', $bar01, array(array('Project documentation'), 569, 0));
+
+        $bar02 = new MockBar($this);
+        $foo->setReturnReference('searchByTitle', $bar02, array(array('Folder 1', 'Folder 2'), 569, 35));
     }
 }

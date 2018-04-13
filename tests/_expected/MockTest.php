@@ -46,7 +46,7 @@ class MockTest
 
         buildOtherStuff();
 
-        $foo->shouldReceive('searchAncestorIds')->andReturns('result')->with('param1')->once();
+        $foo->shouldReceive('searchAncestorIds')->with('param1')->once()->andReturns('result');
     }
 
     public function testWhithMockHelper()
@@ -102,5 +102,16 @@ class MockTest
     {
         $foo = \Mockery::spy(Foo::class);
         $foo->shouldReceive('searchAncestorIds')->times(2);
+    }
+
+    public function testMultipleReturns()
+    {
+        $foo = \Mockery::spy(Foo::class);
+
+        $bar01 = \Mockery::spy(Bar::class);
+        $foo->shouldReceive('searchByTitle')->with(array('Project documentation'), 569, 0)->andReturns($bar01);
+
+        $bar02 = \Mockery::spy(Bar::class);
+        $foo->shouldReceive('searchByTitle')->with(array('Folder 1', 'Folder 2'), 569, 35)->andReturns($bar02);
     }
 }

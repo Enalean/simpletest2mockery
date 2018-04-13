@@ -95,6 +95,7 @@ class ST2Mockery
         $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path, $common));
         $traverser->addVisitor(new DirenameToDIRContVisitor());
         $traverser->addVisitor(new NormalizeSetUpAndTearDownVisitor());
+        $traverser->addVisitor(new ConvertMockGenerationVisitor($this->logger, $path));
 
         $this->oldStmts = $parser->parse(file_get_contents($path));
         $this->oldTokens = $lexer->getTokens();

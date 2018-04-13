@@ -25,6 +25,9 @@ class AbstractMockRepresentation
 
     public function addReturns(Node\Expr $variable, $method_name, $value, array $arguments = [])
     {
+        if (isset($this->op_stack[$this->getVarName($variable)][$method_name]['return'])) {
+            unset($this->op_stack[$this->getVarName($variable)][$method_name]);
+        }
         $this->addArguments($variable, $method_name, $arguments);
         $this->op_stack[$this->getVarName($variable)][$method_name]['return'] = $value;
     }
@@ -110,28 +113,5 @@ class AbstractMockRepresentation
         if ($node instanceof Node\Expr\PropertyFetch && (string) $node->var->name === 'this') {
             return 'this.'.(string) $node->name->name;
         }
-    }
-
-    private function getArgumentSignature(array $arguments = [])
-    {
-        if (\count($arguments) === 0) {
-            return '-';
-        }
-        return $this->serializeArguments($arguments);
-    }
-
-    private function serializeArguments(array $arguments)
-    {
-        $params = [];
-        foreach ($arguments as $argument) {
-            if ($argument->value instanceof Node\Expr\Array_) {
-                $params [] = 'a('.$this->serializeArguments($argument->value->items).')';
-            } elseif ($argument->value instanceof Node\Scalar) {
-                $params []= (string) $argument->value->value;
-            } else {
-                throw new \RuntimeException("Unsupported type of method parameter: ".get_class($argument));
-            }
-        }
-        return implode(', ', $params);
     }
 }

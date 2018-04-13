@@ -119,4 +119,12 @@ class MockTest
         $bar02 = new MockBar($this);
         $foo->setReturnReference('searchByTitle', $bar02, array(array('Folder 1', 'Folder 2'), 569, 35));
     }
+
+    public function testReturnWithParamsFollowedByReturnWithoutParam()
+    {
+        $foo = new MockFoo($this);
+
+        $foo->setReturnValue('searchByTitle', false, array(1, 2));
+        $foo->setReturnValue('searchByTitle', true);
+    }
 }

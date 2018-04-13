@@ -114,4 +114,12 @@ class MockTest
         $bar02 = \Mockery::spy(Bar::class);
         $foo->shouldReceive('searchByTitle')->with(array('Folder 1', 'Folder 2'), 569, 35)->andReturns($bar02);
     }
+
+    public function testReturnWithParamsFollowedByReturnWithoutParam()
+    {
+        $foo = \Mockery::spy(Foo::class);
+
+        $foo->shouldReceive('searchByTitle')->with(1, 2)->andReturns(false);
+        $foo->shouldReceive('searchByTitle')->andReturns(true);
+    }
 }

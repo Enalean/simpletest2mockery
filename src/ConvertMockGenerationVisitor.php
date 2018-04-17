@@ -117,6 +117,7 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
             return $node;
         }
         $instantiated_class = (string) $node->class;
+        $this->checkInstantiatedClass($instantiated_class);
         if (isset($this->mocks[$instantiated_class])) {
             if (isset($this->mocks[$instantiated_class]['args'])) {
                 return $this->getNewMockeryPartialMock($this->mocks[$instantiated_class]['class_name']);
@@ -127,6 +128,7 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
 
     private function getNewMockeryPartialMock(string $class_name)
     {
+        $this->checkInstantiatedClass($class_name);
         return
             new Node\Expr\MethodCall(
                 new Node\Expr\MethodCall(
@@ -148,6 +150,7 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
 
     private function getNewMockerySpy(string $class_name)
     {
+        $this->checkInstantiatedClass($class_name);
         return
             new Node\Expr\StaticCall(
                 new Node\Name('\Mockery'),
@@ -203,5 +206,12 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
             return $this->getNewMockeryPartialMock((string) $node->args[0]->value->value);
         }
         return null;
+    }
+
+    private function checkInstantiatedClass(string $class_name)
+    {
+        if ($class_name === 'DataAccessResult') {
+            throw new \RuntimeException('Direct mocking of DataAccessResult should be converted to stub(x)->method()->returnDar() first');
+        }
     }
 }

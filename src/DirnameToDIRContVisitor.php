@@ -5,7 +5,7 @@ namespace ST2Mockery;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 
-class DirenameToDIRContVisitor extends NodeVisitorAbstract
+class DirnameToDIRContVisitor extends NodeVisitorAbstract
 {
     public function leaveNode(Node $node)
     {

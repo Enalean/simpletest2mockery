@@ -93,7 +93,7 @@ class ST2Mockery
 
         $nodes_to_delete = [];
         $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path, $nodes_to_delete));
-        $traverser->addVisitor(new DirenameToDIRContVisitor());
+        $traverser->addVisitor(new DirnameToDIRContVisitor());
         $traverser->addVisitor(new NormalizeSetUpAndTearDownVisitor());
         $traverser->addVisitor(new ConvertMockGenerationVisitor($this->logger, $path));
 

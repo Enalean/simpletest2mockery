@@ -71,9 +71,16 @@ class MockTest
         $baz->expectOnce('burger');
     }
 
-    public function convertTestHelperGetPartialMock()
+    public function testTestHelperGetPartialMock()
     {
         $mock = TestHelper::getPartialMock('Tracker_Artifact', array('createNewChangeset','getUserManager'));
+    }
+
+    public function testMockWithoutAssignement()
+    {
+        new Bla(
+            mock('UserManager')
+        );
     }
 
     public function testWhenInitialisationIsDoneInSetUp()

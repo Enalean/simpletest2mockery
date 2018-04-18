@@ -36,14 +36,14 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
      */
     public function leaveNode(Node $node)
     {
-        $this->convertMockGenerate($node);
-
         if ($node instanceof Node\Stmt\Expression) {
             if ($node->expr instanceof Node\Expr\StaticCall) {
                 if ($this->recordGenerate($node->expr) === null) {
                     return NodeTraverser::REMOVE_NODE;
                 }
             }
+        } else {
+            return $this->convertMockGenerate($node);
         }
     }
 
@@ -171,28 +171,26 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
      */
     private function convertMockGenerate(Node $node)
     {
-        if ($node instanceof Node\Expr\Assign) {
-            $new_mock = null;
-            if ($node->expr instanceof Node\Expr\New_) {
-                $new_mock = $this->convertNewMock($node->expr);
-            }
-            if ($node->expr instanceof Node\Expr\FuncCall) {
-                switch ($node->expr->name->parts[0]) {
-                    case 'mock':
-                        $new_mock = $this->convertCallMockToMockerySpy($node->expr);
-                        break;
+        $new_mock = null;
+        if ($node instanceof Node\Expr\New_) {
+            $new_mock = $this->convertNewMock($node);
+        }
+        if ($node instanceof Node\Expr\StaticCall && (string)$node->class === 'TestHelper' && (string) $node->name === 'getPartialMock') {
+            $new_mock = $this->getNewMockeryPartialMock((string)$node->args[0]->value->value);
+        }
+        if ($node instanceof Node\Expr\FuncCall) {
+            switch ($node->name->parts[0]) {
+                case 'mock':
+                    $new_mock = $this->convertCallMockToMockerySpy($node);
+                    break;
 
-                    case 'partial_mock':
-                        $new_mock = $this->convertCallMockToMockeryPartial($node->expr);
-                }
+                case 'partial_mock':
+                    $new_mock = $this->convertCallMockToMockeryPartial($node);
+            }
 
-            }
-            if ($node->expr instanceof Node\Expr\StaticCall && (string)$node->expr->class === 'TestHelper' && (string) $node->expr->name === 'getPartialMock') {
-                $new_mock = $this->getNewMockeryPartialMock((string)$node->expr->args[0]->value->value);
-            }
-            if ($new_mock !== null) {
-                $node->expr = $new_mock;
-            }
+        }
+        if ($new_mock !== null) {
+            return $new_mock;
         }
     }
 

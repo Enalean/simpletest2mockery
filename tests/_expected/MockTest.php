@@ -66,9 +66,16 @@ class MockTest
         $baz->shouldReceive('burger')->once();
     }
 
-    public function convertTestHelperGetPartialMock()
+    public function testTestHelperGetPartialMock()
     {
         $mock = \Mockery::mock(Tracker_Artifact::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    }
+
+    public function testMockWithoutAssignement()
+    {
+        new Bla(
+            \Mockery::spy(UserManager::class)
+        );
     }
 
     public function testWhenInitialisationIsDoneInSetUp()

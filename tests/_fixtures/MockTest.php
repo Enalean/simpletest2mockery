@@ -127,4 +127,9 @@ class MockTest
         $foo->setReturnValue('searchByTitle', false, array(1, 2));
         $foo->setReturnValue('searchByTitle', true);
     }
+
+    public function testConvertStubOfClassInMockeryStubs()
+    {
+        stub('Foo')->searchByTitle(1, 2)->returns(true);
+    }
 }

@@ -122,4 +122,9 @@ class MockTest
         $foo->shouldReceive('searchByTitle')->with(1, 2)->andReturns(false);
         $foo->shouldReceive('searchByTitle')->andReturns(true);
     }
+
+    public function testConvertStubOfClassInMockeryStubs()
+    {
+        mockery_stub(Foo::class)->searchByTitle(1, 2)->returns(true);
+    }
 }

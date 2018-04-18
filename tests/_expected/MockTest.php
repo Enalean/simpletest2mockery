@@ -139,4 +139,9 @@ class MockTest
     {
         mockery_stub(\Foo::class)->searchByTitle(1, 2)->returns(true);
     }
+
+    public function testConvertAMockTracker()
+    {
+        aMockeryTracker()->withId(12)->build();
+    }
 }

@@ -144,4 +144,9 @@ class MockTest
     {
         stub('Foo')->searchByTitle(1, 2)->returns(true);
     }
+
+    public function testConvertAMockTracker()
+    {
+        aMockTracker()->withId(12)->build();
+    }
 }

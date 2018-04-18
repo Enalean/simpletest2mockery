@@ -71,6 +71,11 @@ class MockTest
         $baz->expectOnce('burger');
     }
 
+    public function convertTestHelperGetPartialMock()
+    {
+        $mock = TestHelper::getPartialMock('Tracker_Artifact', array('createNewChangeset','getUserManager'));
+    }
+
     public function testWhenInitialisationIsDoneInSetUp()
     {
         $this->tracker->setReturnValue('getId', 123);

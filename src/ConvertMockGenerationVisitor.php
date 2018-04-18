@@ -2,6 +2,7 @@
 
 namespace ST2Mockery;
 
+use Mockery\MethodCall;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
@@ -185,6 +186,9 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
                         $new_mock = $this->convertCallMockToMockeryPartial($node->expr);
                 }
 
+            }
+            if ($node->expr instanceof Node\Expr\StaticCall && (string)$node->expr->class === 'TestHelper' && (string) $node->expr->name === 'getPartialMock') {
+                $new_mock = $this->getNewMockeryPartialMock((string)$node->expr->args[0]->value->value);
             }
             if ($new_mock !== null) {
                 $node->expr = $new_mock;

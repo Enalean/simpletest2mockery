@@ -66,6 +66,11 @@ class MockTest
         $baz->shouldReceive('burger')->once();
     }
 
+    public function convertTestHelperGetPartialMock()
+    {
+        $mock = \Mockery::mock(Tracker_Artifact::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    }
+
     public function testWhenInitialisationIsDoneInSetUp()
     {
         $this->tracker->shouldReceive('getId')->andReturns(123);

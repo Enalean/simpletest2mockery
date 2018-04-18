@@ -34,7 +34,7 @@ class ConvertStubVisitor extends NodeVisitorAbstract
                 $class_name = (string) $node->args[0]->value->value;
                 $node->args[0] = new Node\Arg(
                     new Node\Expr\ClassConstFetch(
-                        new Node\Name($class_name),
+                        new Node\Name('\\'.$class_name),
                         new Node\Identifier('class')
                     )
                 );

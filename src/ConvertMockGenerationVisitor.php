@@ -138,7 +138,7 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
                         new Node\Name('mock'),
                         [
                             new Node\Expr\ClassConstFetch(
-                                new Node\Name($class_name),
+                                new Node\Name('\\'.$class_name),
                                 new Node\Identifier('class')
                             )
                         ]
@@ -158,7 +158,7 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
                 new Node\Name('spy'),
                 [
                     new Node\Expr\ClassConstFetch(
-                        new Node\Name($class_name),
+                        new Node\Name('\\'.$class_name),
                         new Node\Identifier('class')
                     )
                 ]

@@ -25,6 +25,9 @@ class MockTest
     public function setUp()
     {
         parent::setUp();
+        $this->setUpGlobalsMockery();
+
+        // A Tracker
         $this->tracker = \Mockery::spy(\Foo::class);
     }
 

@@ -23,6 +23,7 @@ class SetUpTearDownTest
     public function setUp()
     {
         parent::setUp();
+        $this->setUpGlobalsMockery();
         // initialize stuff
         $this->stuff = 'foo';
         unset($this->previous);

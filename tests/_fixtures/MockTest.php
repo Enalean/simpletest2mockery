@@ -28,6 +28,9 @@ class MockTest
 {
     public function setUp()
     {
+        parent::setUp();
+
+        // A Tracker
         $this->tracker = new MockFoo();
     }
 

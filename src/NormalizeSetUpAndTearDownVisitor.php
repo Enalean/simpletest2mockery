@@ -31,7 +31,7 @@ class NormalizeSetUpAndTearDownVisitor extends NodeVisitorAbstract
                     if (isset($stmt->expr) &&
                         $stmt->expr instanceof Node\Expr\MethodCall &&
                         $stmt->expr->var instanceof Node\Expr\Variable &&
-                        (string) $stmt->expr->var === 'this' &&
+                        (string) $stmt->expr->var->name === 'this' &&
                         (string) $stmt->expr->name === 'setUpGlobalsMockery'
                     ) {
                         $setup_globals_mockery_found = true;

@@ -28,7 +28,7 @@ class ST2MockeryTest extends TestCase
     private $fixtures_dir;
     private $expected_dir;
 
-    public function setUp()
+    public function setUp() : void
     {
         $tmp_dir            = escapeshellarg(sys_get_temp_dir());
         $this->fixtures_dir = exec("mktemp -d -p $tmp_dir st2mockeryXXXXXX");
@@ -37,7 +37,7 @@ class ST2MockeryTest extends TestCase
         exec('cp -r ' . escapeshellarg($pristine) . '/* ' . escapeshellarg($this->fixtures_dir) . '/');
     }
 
-    public function tearDown()
+    public function tearDown() : void
     {
         exec('rm -rf ' . escapeshellarg($this->fixtures_dir));
     }

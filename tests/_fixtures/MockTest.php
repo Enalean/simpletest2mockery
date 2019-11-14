@@ -179,6 +179,11 @@ class MockTest
         expect($this->another_foo)->savePermissions('', array(3), 'v2')->at(1);
     }
 
+    public function testExpectWithWildcard()
+    {
+        expect($this->another_foo)->savePermissionsWildcard(1, '*')->once();
+    }
+
     public function testConvertAMockTracker()
     {
         aMockTracker()->withId(12)->build();

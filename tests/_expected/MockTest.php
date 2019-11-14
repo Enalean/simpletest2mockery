@@ -174,6 +174,11 @@ class MockTest
         $this->another_foo->shouldReceive('savePermissions')->with('', array(3), 'v2')->at(1);
     }
 
+    public function testExpectWithWildcard()
+    {
+        $this->another_foo->shouldReceive('savePermissionsWildcard')->with(1, \Mockery::any())->once();
+    }
+
     public function testConvertAMockTracker()
     {
         aMockeryTracker()->withId(12)->build();

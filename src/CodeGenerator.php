@@ -36,12 +36,16 @@ class CodeGenerator
             )
         ];
         $spy_args = array_merge($spy_args, $contructor_args);
-        return
-            new Node\Expr\StaticCall(
-                new Node\Name('\Mockery'),
-                new Node\Name('spy'),
-                $spy_args
-            );
+        return self::getMockeryStaticCallTo('spy', $spy_args);
+    }
+
+    private static function getMockeryStaticCallTo(string $method_name, array $args = []): Node\Expr\StaticCall
+    {
+        return new Node\Expr\StaticCall(
+            new Node\Name('\Mockery'),
+            new Node\Name($method_name),
+            $args
+        );
     }
 
     public static function getShouldReceive(Node $node, string $method_name): Node\Expr\MethodCall
@@ -58,7 +62,15 @@ class CodeGenerator
         return new Node\Expr\MethodCall(
             $node,
             'with',
-            $args
+            array_map(
+                function ($arg) {
+                    if ($arg instanceof Node\Arg && $arg->value instanceof Node\Scalar\String_ && $arg->value->value === '*') {
+                        return self::getMockeryStaticCallTo('any');
+                    }
+                    return $arg;
+                },
+                $args
+            ),
         );
     }
 

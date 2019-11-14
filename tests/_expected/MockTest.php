@@ -20,6 +20,13 @@
 
 require_once 'bootstrap.php';
 
+class FactoryMock
+{
+    protected function setLicenseAgreementAtPackageCreation(SomeClass $package, ?int $foo)
+    {
+    }
+}
+
 class MockTest
 {
     public function setUp()

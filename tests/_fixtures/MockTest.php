@@ -24,6 +24,13 @@ Mock::generate('Bar');
 Mock::generatePartial('Baz', 'BazTestVersion', array('meth1',
     'meth2'));
 
+class FactoryMock
+{
+    protected function setLicenseAgreementAtPackageCreation(SomeClass $package, ?int $foo)
+    {
+    }
+}
+
 class MockTest
 {
     public function setUp()

@@ -86,7 +86,7 @@ class ST2Mockery
                 'startTokenPos', 'endTokenPos',
             ],
         ]);
-        $parser = new Parser\Php5($lexer);
+        $parser = new Parser\Php7($lexer);
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());

@@ -70,9 +70,21 @@ class CodeGenerator
                     return $arg;
                 },
                 $args
-            ),
+            )
         );
     }
+
+    public static function getAtLeastOnce(Node $node): Node\Expr\MethodCall
+    {
+        return new Node\Expr\MethodCall(
+            new Node\Expr\MethodCall(
+                $node,
+                'atLeast'
+            ),
+            'once'
+        );
+    }
+
 
     public static function getReturn(Node $node, array $args): Node\Expr\MethodCall
     {

@@ -116,9 +116,11 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
 
                 case 'expectAt':
                     return $this->convertExpectAt($node);
+                case 'throwOn':
+                    return $this->convertThrowOn($node);
+
                 case 'expect':
                 case 'expectAtLeastOnce':
-                case 'throwOn':
                 case 'throwAt':
                     throw new \Exception("$method_name implementation missing in $this->filepath L".$node->getLine());
                     break;
@@ -282,5 +284,24 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             );
         }
         throw new \Exception("Un-managed number of arguments for expectCallCount at L".$node->getLine());
+    }
+
+    private function convertThrowOn(Node\Expr\MethodCall $node)
+    {
+        if (count($node->args) !== 2) {
+            throw new \Exception("Un-managed number of arguments for thowOn at L".$node->getLine());
+        }
+
+        $method_name = (string) $node->args[0]->value->value;
+        $returned_value = $node->args[1];
+        return new Node\Expr\MethodCall(
+            new Node\Expr\MethodCall(
+                $node->var,
+                'shouldReceive',
+                [new Node\Arg(new Node\Scalar\String_($method_name))]
+            ),
+            'andThrows',
+            [$node->args[1]]
+        );
     }
 }

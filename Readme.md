@@ -63,12 +63,7 @@ Todo
 
 Format to convert:
 
-- [] setReturnValueAt
-- [] setReturnReferenceAt
-- [] expectAt
 - [] expect
 - [] expectAtLeastOnce
-- [] throwOn
 - [] throwAt
 - [] expect()
-- [] stub()

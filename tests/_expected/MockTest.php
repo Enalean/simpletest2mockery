@@ -147,4 +147,10 @@ class MockTest
     {
         aMockeryTracker()->withId(12)->build();
     }
+
+    public function testConvertThrowOn()
+    {
+        $foo = \Mockery::spy(\Foo::class);
+        $foo->shouldReceive('purgeFiles')->andThrows(new RuntimeException("Error while doing things"));
+    }
 }

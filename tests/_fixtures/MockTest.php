@@ -152,4 +152,10 @@ class MockTest
     {
         aMockTracker()->withId(12)->build();
     }
+
+    public function testConvertThrowOn()
+    {
+        $foo = new MockFoo($this);
+        $foo->throwOn('purgeFiles', new RuntimeException("Error while doing things"));
+    }
 }

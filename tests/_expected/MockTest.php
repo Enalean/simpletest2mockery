@@ -151,7 +151,7 @@ class MockTest
 
     public function testConvertStubOfClassInMockeryStubs()
     {
-        mockery_stub(\Foo::class)->searchByTitle(1, 2)->returns(true);
+        \Mockery::spy(\Foo::class)->shouldReceive('searchByTitle')->with(1, 2)->andReturns(true);
     }
 
     public function testConvertExpectOfClassInMockeryStubs()

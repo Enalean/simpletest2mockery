@@ -2,7 +2,6 @@
 
 namespace ST2Mockery;
 
-use Mockery\MethodCall;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
@@ -152,17 +151,7 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
     private function getNewMockerySpy(string $class_name)
     {
         $this->checkInstantiatedClass($class_name);
-        return
-            new Node\Expr\StaticCall(
-                new Node\Name('\Mockery'),
-                new Node\Name('spy'),
-                [
-                    new Node\Expr\ClassConstFetch(
-                        new Node\Name('\\'.$class_name),
-                        new Node\Identifier('class')
-                    )
-                ]
-            );
+        return CodeGenerator::getNewMockerySpy($class_name);
     }
 
     /**

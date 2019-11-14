@@ -29,45 +29,46 @@ class ConvertStubVisitor extends NodeVisitorAbstract
 
     public function leaveNode(Node $node)
     {
-        if ($node instanceof Node\Expr\FuncCall && (string)$node->name === 'stub') {
-            if ($node->args[0]->value instanceof Node\Scalar\String_) {
-                $class_name = (string) $node->args[0]->value->value;
-                $node->args[0] = new Node\Arg(
-                    new Node\Expr\ClassConstFetch(
-                        new Node\Name('\\'.$class_name),
-                        new Node\Identifier('class')
-                    )
-                );
-
-                $node->name = new Node\Name('mockery_stub');
-
-                return $node;
-            }
+        if ($this->isCallToReturns($node)) {
+            return CodeGenerator::getReturn($node->var, $node->args);
         }
-
-        if ($node instanceof Node\Expr\MethodCall) {
-            if ($node->var instanceof Node\Expr\FuncCall && (string) $node->var->name === 'expect') {
-                if ($node->var->args[0]->value instanceof Node\Expr\Variable || $node->var->args[0]->value instanceof Node\Expr\PropertyFetch) {
-                    $method_name = (string) $node->name;
-                    if (count($node->args) === 0) {
-                        return $this->getShouldReceiveFromExpect($node, $method_name);
-                    }
-                    return new Node\Expr\MethodCall(
-                        $this->getShouldReceiveFromExpect($node, $method_name),
-                        'with',
-                        $node->args
-                    );
-                }
-            }
+        if ($this->isCallToExpectOrStubFunctions($node)) {
+            return $this->getFromExpectOrStub($node->var->args[0]->value, (string) $node->name, $node->args);
         }
     }
 
-    private function getShouldReceiveFromExpect(Node $node, string $method_name): Node\Expr\MethodCall
+    private function isCallToReturns(Node $node): bool
     {
-        return new Node\Expr\MethodCall(
-            $node->var->args[0]->value,
-            'shouldReceive',
-            [new Node\Arg(new Node\Scalar\String_($method_name))]
-        );
+        return $node instanceof Node\Expr\MethodCall && (string) $node->name === 'returns';
+    }
+
+    private function isCallToExpectOrStubFunctions(Node $node): bool
+    {
+        return $node instanceof Node\Expr\MethodCall
+            && $node->var instanceof Node\Expr\FuncCall
+            && in_array((string) $node->var->name, ['expect', 'stub']);
+    }
+
+    private function getFromExpectOrStub(Node $mock_target, string $method_name, array $args)
+    {
+        if ($mock_target instanceof Node\Expr\Variable || $mock_target instanceof Node\Expr\PropertyFetch) {
+            if (count($args) === 0) {
+                return CodeGenerator::getShouldReceive($mock_target, $method_name);
+            }
+            return CodeGenerator::getWith(
+                CodeGenerator::getShouldReceive($mock_target, $method_name),
+                $args
+            );
+        }
+        if ($mock_target instanceof Node\Scalar\String_) {
+            $class_name = (string) $mock_target->value;
+            return CodeGenerator::getWith(
+                CodeGenerator::getShouldReceive(
+                    CodeGenerator::getNewMockerySpy($class_name),
+                    $method_name
+                ),
+                $args,
+            );
+        }
     }
 }

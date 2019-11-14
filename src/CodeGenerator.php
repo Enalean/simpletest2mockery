@@ -71,51 +71,61 @@ class CodeGenerator
 
     public static function getReturnsEmptyDar(Node $node): Node\Expr\MethodCall
     {
-        return new Node\Expr\MethodCall(
+        return self::getReturn(
             $node,
-            'andReturns',
-            [
-                new Node\Arg(
-                    new Node\Expr\StaticCall(
-                        new Node\Name('\TestHelper'),
-                        new Node\Name('emptyDar')
-                    )
-                )
-            ]
+            self::getAsArgsForMethodCall(
+                self::getTestHelperNoArgs('emptyDar')
+            )
         );
     }
 
     public static function getReturnsDar(Node $node, array $args): Node\Expr\MethodCall
     {
-        return new Node\Expr\MethodCall(
+        return self::getReturn(
             $node,
-            'andReturns',
-            [
-                new Node\Arg(
-                    new Node\Expr\StaticCall(
-                        new Node\Name('\TestHelper'),
-                        new Node\Name('arrayToDar'),
-                        $args
-                    )
+            self::getAsArgsForMethodCall(
+                self::getTestHelperWithArgs(
+                    'arrayToDar',
+                    $args
                 )
-            ]
+            )
         );
     }
 
     public static function getReturnsDarFromArray(Node $node, array $args): Node\Expr\MethodCall
     {
-        return new Node\Expr\MethodCall(
+        return self::getReturn(
             $node,
-            'andReturns',
-            [
-                new Node\Arg(
-                    new Node\Expr\StaticCall(
-                        new Node\Name('\TestHelper'),
-                        new Node\Name('argListToDar'),
-                        $args
-                    )
+            self::getAsArgsForMethodCall(
+                self::getTestHelperWithArgs(
+                    'argListToDar',
+                    $args
                 )
-            ]
+            )
+        );
+    }
+
+    private static function getAsArgsForMethodCall(Node $node): array
+    {
+        return [
+            new Node\Arg($node)
+        ];
+    }
+
+    private static function getTestHelperNoArgs(string $method): Node\Expr\StaticCall
+    {
+        return new Node\Expr\StaticCall(
+            new Node\Name('\TestHelper'),
+            new Node\Name($method)
+        );
+    }
+
+    private static function getTestHelperWithArgs(string $method, array $args): Node\Expr\StaticCall
+    {
+        return new Node\Expr\StaticCall(
+            new Node\Name('\TestHelper'),
+            new Node\Name($method),
+            $args
         );
     }
 }

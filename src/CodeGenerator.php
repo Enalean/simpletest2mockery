@@ -78,7 +78,7 @@ class CodeGenerator
                 new Node\Arg(
                     new Node\Expr\StaticCall(
                         new Node\Name('\TestHelper'),
-                        new Node\Name('emptyDar'),
+                        new Node\Name('emptyDar')
                     )
                 )
             ]

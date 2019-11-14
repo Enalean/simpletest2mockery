@@ -76,7 +76,7 @@ class ConvertStubVisitor extends NodeVisitorAbstract
                     CodeGenerator::getNewMockerySpy($class_name),
                     $method_name
                 ),
-                $args,
+                $args
             );
         }
     }

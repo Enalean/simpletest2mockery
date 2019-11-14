@@ -63,34 +63,21 @@ class AbstractMockRepresentation
 
     private function generateShouldReceive(Node\Expr $original_node, string $method_name)
     {
-        $variable = new Node\Expr\MethodCall(
+        $variable = CodeGenerator::getShouldReceive(
             $original_node,
-            'shouldReceive',
-            [
-                new Node\Arg(new Node\Scalar\String_($method_name))
-            ]
+            $method_name
         );
 
         if (isset($this->op_stack[$this->getVarName($original_node)][$method_name]['args'])) {
-            $variable = $this->generateWith($variable, $this->op_stack[$this->getVarName($original_node)][$method_name]['args']);
+            $variable = CodeGenerator::getWith($variable, $this->op_stack[$this->getVarName($original_node)][$method_name]['args']);
         }
         if (isset($this->op_stack[$this->getVarName($original_node)][$method_name]['count'])) {
             $variable = $this->generateCount($variable, $this->op_stack[$this->getVarName($original_node)][$method_name]['count']);
         }
         if (isset($this->op_stack[$this->getVarName($original_node)][$method_name]['return'])) {
-            $variable = $this->generateAndReturns($variable, $this->op_stack[$this->getVarName($original_node)][$method_name]['return']);
+            $variable = CodeGenerator::getReturn($variable, [$this->op_stack[$this->getVarName($original_node)][$method_name]['return']]);
         }
         return $variable;
-    }
-
-    private function generateAndReturns(Node\Expr\MethodCall $node, $returned_value)
-    {
-        return new Node\Expr\MethodCall($node, 'andReturns', [$returned_value]);
-    }
-
-    private function generateWith(Node\Expr\MethodCall $node, array $method_args)
-    {
-        return new Node\Expr\MethodCall($node, 'with', $method_args);
     }
 
     private function generateCount(Node\Expr\MethodCall $node, int $count)

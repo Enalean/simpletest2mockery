@@ -235,22 +235,15 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             $method_name = (string) $node->args[1]->value->value;
             $returned_value = $node->args[2];
 
-            return new Node\Expr\MethodCall(
+            return CodeGenerator::getReturn(
                 new Node\Expr\MethodCall(
-                    new Node\Expr\MethodCall(
-                        $node->var,
-                        'shouldReceive',
-                        [new Node\Arg(new Node\Scalar\String_($method_name))]
-                    ),
-                    'once',
-                    []
+                    CodeGenerator::getShouldReceive($node->var, $method_name),
+                    'once'
                 ),
-                'andReturns',
                 [$returned_value]
             );
-        } else {
-            throw new \Exception("Un-managed number of arguments for returnAt at L".$node->getLine());
         }
+        throw new \Exception("Un-managed number of arguments for returnAt at L".$node->getLine());
     }
 
     /**
@@ -271,13 +264,8 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
             }
 
             return new Node\Expr\MethodCall(
-                new Node\Expr\MethodCall(
-                    new Node\Expr\MethodCall(
-                        $node->var,
-                        'shouldReceive',
-                        [new Node\Arg(new Node\Scalar\String_($method_name))]
-                    ),
-                    'with',
+                CodeGenerator::getWith(
+                    CodeGenerator::getShouldReceive($node->var, $method_name),
                     $arguments
                 ),
                 'ordered'
@@ -295,11 +283,7 @@ class SimpleTestToMockeryVisitor extends NodeVisitorAbstract
         $method_name = (string) $node->args[0]->value->value;
         $returned_value = $node->args[1];
         return new Node\Expr\MethodCall(
-            new Node\Expr\MethodCall(
-                $node->var,
-                'shouldReceive',
-                [new Node\Arg(new Node\Scalar\String_($method_name))]
-            ),
+            CodeGenerator::getShouldReceive($node->var, $method_name),
             'andThrows',
             [$node->args[1]]
         );

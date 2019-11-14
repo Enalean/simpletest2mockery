@@ -27,18 +27,20 @@ use PhpParser\Node;
 
 class CodeGenerator
 {
-    public static function getNewMockerySpy(string $class_name): Node\Expr\StaticCall
+    public static function getNewMockerySpy(string $class_name, array $contructor_args = []): Node\Expr\StaticCall
     {
+        $spy_args = [
+            new Node\Expr\ClassConstFetch(
+                new Node\Name('\\'.$class_name),
+                new Node\Identifier('class')
+            )
+        ];
+        $spy_args = array_merge($spy_args, $contructor_args);
         return
             new Node\Expr\StaticCall(
                 new Node\Name('\Mockery'),
                 new Node\Name('spy'),
-                [
-                    new Node\Expr\ClassConstFetch(
-                        new Node\Name('\\'.$class_name),
-                        new Node\Identifier('class')
-                    )
-                ]
+                $spy_args
             );
     }
 
@@ -105,7 +107,7 @@ class CodeGenerator
         );
     }
 
-    private static function getAsArgsForMethodCall(Node $node): array
+    public static function getAsArgsForMethodCall(Node $node): array
     {
         return [
             new Node\Arg($node)
@@ -127,5 +129,22 @@ class CodeGenerator
             new Node\Name($method),
             $args
         );
+    }
+
+    public static function getMap(array $map)
+    {
+        $members = [];
+        foreach ($map as $key => $value) {
+            $members []= new Node\Expr\ArrayItem(
+                $value,
+                new Node\Scalar\String_($key)
+            );
+        }
+        return new Node\Expr\Array_($members);
+    }
+
+    public static function getFalseExpr(): Node\Expr
+    {
+        return new Node\Expr\ConstFetch(new Node\Name('false'));
     }
 }

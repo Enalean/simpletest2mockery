@@ -179,6 +179,11 @@ class MockTest
         aMockeryTracker()->withId(12)->build();
     }
 
+    public function testConvertAMockProject()
+    {
+        $project = \Mockery::spy(\Project::class, ['getID' => 111, 'getUnixName' => 'foo', 'isPublic' => false]);
+    }
+
     public function testConvertThrowOn()
     {
         $foo = \Mockery::spy(\Foo::class);

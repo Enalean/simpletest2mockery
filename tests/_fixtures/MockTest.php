@@ -184,6 +184,11 @@ class MockTest
         aMockTracker()->withId(12)->build();
     }
 
+    public function testConvertAMockProject()
+    {
+        $project = aMockProject()->withId(111)->withUnixName('foo')->build();
+    }
+
     public function testConvertThrowOn()
     {
         $foo = new MockFoo($this);

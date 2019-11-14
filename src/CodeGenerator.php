@@ -68,4 +68,54 @@ class CodeGenerator
             $args
         );
     }
+
+    public static function getReturnsEmptyDar(Node $node): Node\Expr\MethodCall
+    {
+        return new Node\Expr\MethodCall(
+            $node,
+            'andReturns',
+            [
+                new Node\Arg(
+                    new Node\Expr\StaticCall(
+                        new Node\Name('\TestHelper'),
+                        new Node\Name('emptyDar'),
+                    )
+                )
+            ]
+        );
+    }
+
+    public static function getReturnsDar(Node $node, array $args): Node\Expr\MethodCall
+    {
+        return new Node\Expr\MethodCall(
+            $node,
+            'andReturns',
+            [
+                new Node\Arg(
+                    new Node\Expr\StaticCall(
+                        new Node\Name('\TestHelper'),
+                        new Node\Name('arrayToDar'),
+                        $args
+                    )
+                )
+            ]
+        );
+    }
+
+    public static function getReturnsDarFromArray(Node $node, array $args): Node\Expr\MethodCall
+    {
+        return new Node\Expr\MethodCall(
+            $node,
+            'andReturns',
+            [
+                new Node\Arg(
+                    new Node\Expr\StaticCall(
+                        new Node\Name('\TestHelper'),
+                        new Node\Name('argListToDar'),
+                        $args
+                    )
+                )
+            ]
+        );
+    }
 }

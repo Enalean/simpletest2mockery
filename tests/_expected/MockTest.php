@@ -154,6 +154,13 @@ class MockTest
         \Mockery::spy(\Foo::class)->shouldReceive('searchByTitle')->with(1, 2)->andReturns(true);
     }
 
+    public function testConvertReturnsVariousDar()
+    {
+        $this->another_foo->shouldReceive('getSomeDBResults')->andReturns(\TestHelper::emptyDar());
+        $this->another_foo->shouldReceive('getSomeDBResults')->andReturns(\TestHelper::arrayToDar(['some_id' => 12], ['some_id' => 13]));
+        $this->another_foo->shouldReceive('getSomeDBResults')->andReturns(\TestHelper::argListToDar([['some_id' => 12], ['some_id' => 14]]));
+    }
+
     public function testConvertExpectOfClassInMockeryStubs()
     {
         $foo = \Mockery::spy(\Foo::class);

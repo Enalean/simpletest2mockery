@@ -29,17 +29,26 @@ class ConvertStubVisitor extends NodeVisitorAbstract
 
     public function leaveNode(Node $node)
     {
-        if ($this->isCallToReturns($node)) {
+        if ($this->isCallTo($node, 'returns')) {
             return CodeGenerator::getReturn($node->var, $node->args);
+        }
+        if ($this->isCallTo($node, 'returnsEmptyDar')) {
+            return CodeGenerator::getReturnsEmptyDar($node->var);
+        }
+        if ($this->isCallTo($node, 'returnsDar')) {
+            return CodeGenerator::getReturnsDar($node->var, $node->args);
+        }
+        if ($this->isCallTo($node, 'returnsDarFromArray')) {
+            return CodeGenerator::getReturnsDarFromArray($node->var, $node->args);
         }
         if ($this->isCallToExpectOrStubFunctions($node)) {
             return $this->getFromExpectOrStub($node->var->args[0]->value, (string) $node->name, $node->args);
         }
     }
 
-    private function isCallToReturns(Node $node): bool
+    private function isCallTo(Node $node, string $method_name): bool
     {
-        return $node instanceof Node\Expr\MethodCall && (string) $node->name === 'returns';
+        return $node instanceof Node\Expr\MethodCall && (string) $node->name === $method_name;
     }
 
     private function isCallToExpectOrStubFunctions(Node $node): bool

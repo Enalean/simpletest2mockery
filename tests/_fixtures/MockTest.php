@@ -159,6 +159,13 @@ class MockTest
         stub('Foo')->searchByTitle(1, 2)->returns(true);
     }
 
+    public function testConvertReturnsVariousDar()
+    {
+        stub($this->another_foo)->getSomeDBResults()->returnsEmptyDar();
+        stub($this->another_foo)->getSomeDBResults()->returnsDar(['some_id' => 12], ['some_id' => 13]);
+        stub($this->another_foo)->getSomeDBResults()->returnsDarFromArray([['some_id' => 12], ['some_id' => 14]]);
+    }
+
     public function testConvertExpectOfClassInMockeryStubs()
     {
         $foo = mock('Foo');

@@ -69,7 +69,7 @@ class ST2Mockery
         throw new \RuntimeException("$filepath is neither a file nor a directory");
     }
 
-    private function parseAndSave(string $path)
+    public function parseAndSave(string $path)
     {
         $this->load($path);
         //$this->printStatments();

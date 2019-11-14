@@ -33,12 +33,16 @@ class FactoryMock
 
 class MockTest
 {
+    protected $another_foo;
+
     public function setUp()
     {
         parent::setUp();
 
         // A Tracker
         $this->tracker = new MockFoo();
+
+        $this->another_foo = mock('Foo');
     }
 
     public function testMethodsAreConverted()
@@ -153,6 +157,19 @@ class MockTest
     public function testConvertStubOfClassInMockeryStubs()
     {
         stub('Foo')->searchByTitle(1, 2)->returns(true);
+    }
+
+    public function testConvertExpectOfClassInMockeryStubs()
+    {
+        $foo = mock('Foo');
+        expect($foo)->searchByTitle()->once();
+    }
+
+    public function testHalfBackedConvertOfExpectIsBetterThanNothing()
+    {
+        expect($this->another_foo)->savePermissions()->count(2);
+        expect($this->another_foo)->savePermissions('', array(2), 'v1')->at(0);
+        expect($this->another_foo)->savePermissions('', array(3), 'v2')->at(1);
     }
 
     public function testConvertAMockTracker()

@@ -50,7 +50,7 @@ class ST2MockeryTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
 
         $converter = new ST2Mockery($logger);
-        $converter->run(array("", $this->fixtures_dir));
+        $converter->parseAndSave($this->fixtures_dir . '/' . $filename);
         $this->assertEquals(
             file_get_contents($this->expected_dir . '/' . $filename),
             file_get_contents($this->fixtures_dir . '/' . $filename)

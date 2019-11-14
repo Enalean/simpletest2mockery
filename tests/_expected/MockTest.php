@@ -29,6 +29,8 @@ class FactoryMock
 
 class MockTest
 {
+    protected $another_foo;
+
     public function setUp()
     {
         parent::setUp();
@@ -36,6 +38,8 @@ class MockTest
 
         // A Tracker
         $this->tracker = \Mockery::spy(\Foo::class);
+
+        $this->another_foo = \Mockery::spy(\Foo::class);
     }
 
     public function testMethodsAreConverted()
@@ -148,6 +152,19 @@ class MockTest
     public function testConvertStubOfClassInMockeryStubs()
     {
         mockery_stub(\Foo::class)->searchByTitle(1, 2)->returns(true);
+    }
+
+    public function testConvertExpectOfClassInMockeryStubs()
+    {
+        $foo = \Mockery::spy(\Foo::class);
+        $foo->shouldReceive('searchByTitle')->once();
+    }
+
+    public function testHalfBackedConvertOfExpectIsBetterThanNothing()
+    {
+        $this->another_foo->shouldReceive('savePermissions')->count(2);
+        $this->another_foo->shouldReceive('savePermissions')->with('', array(2), 'v1')->at(0);
+        $this->another_foo->shouldReceive('savePermissions')->with('', array(3), 'v2')->at(1);
     }
 
     public function testConvertAMockTracker()

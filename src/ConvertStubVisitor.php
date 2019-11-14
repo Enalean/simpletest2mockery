@@ -44,5 +44,30 @@ class ConvertStubVisitor extends NodeVisitorAbstract
                 return $node;
             }
         }
+
+        if ($node instanceof Node\Expr\MethodCall) {
+            if ($node->var instanceof Node\Expr\FuncCall && (string) $node->var->name === 'expect') {
+                if ($node->var->args[0]->value instanceof Node\Expr\Variable || $node->var->args[0]->value instanceof Node\Expr\PropertyFetch) {
+                    $method_name = (string) $node->name;
+                    if (count($node->args) === 0) {
+                        return $this->getShouldReceiveFromExpect($node, $method_name);
+                    }
+                    return new Node\Expr\MethodCall(
+                        $this->getShouldReceiveFromExpect($node, $method_name),
+                        'with',
+                        $node->args
+                    );
+                }
+            }
+        }
+    }
+
+    private function getShouldReceiveFromExpect(Node $node, string $method_name): Node\Expr\MethodCall
+    {
+        return new Node\Expr\MethodCall(
+            $node->var->args[0]->value,
+            'shouldReceive',
+            [new Node\Arg(new Node\Scalar\String_($method_name))]
+        );
     }
 }

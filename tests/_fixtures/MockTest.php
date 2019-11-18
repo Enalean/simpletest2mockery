@@ -156,7 +156,10 @@ class MockTest
 
     public function testConvertStubOfClassInMockeryStubs()
     {
-        stub('Foo')->searchByTitle(1, 2)->returns(true);
+        stub('FooDirectStub')->searchByTitle(1, 2)->returns(true);
+        stub($dao)->save()->count(3);
+
+        new BazBaz(stub('FooDirectStubInCall')->searchByTitle(1, 2)->returns(true));
     }
 
     public function testConvertReturnsVariousDar()

@@ -85,6 +85,14 @@ class CodeGenerator
         );
     }
 
+    public static function times(Node $node, Node\Scalar\LNumber $count): Node\Expr\MethodCall
+    {
+        return new Node\Expr\MethodCall(
+            $node,
+            'times',
+            self::getAsArgsForMethodCall($count)
+        );
+    }
 
     public static function getReturn(Node $node, array $args): Node\Expr\MethodCall
     {

@@ -151,7 +151,10 @@ class MockTest
 
     public function testConvertStubOfClassInMockeryStubs()
     {
-        \Mockery::spy(\Foo::class)->shouldReceive('searchByTitle')->with(1, 2)->andReturns(true);
+        \Mockery::spy(\FooDirectStub::class)->shouldReceive('searchByTitle')->with(1, 2)->andReturns(true);
+        $dao->shouldReceive('save')->times(3);
+
+        new BazBaz(\Mockery::spy(\FooDirectStubInCall::class)->shouldReceive('searchByTitle')->with(1, 2)->andReturns(true)->getMock());
     }
 
     public function testConvertReturnsVariousDar()
@@ -169,7 +172,7 @@ class MockTest
 
     public function testHalfBackedConvertOfExpectIsBetterThanNothing()
     {
-        $this->another_foo->shouldReceive('savePermissions')->count(2);
+        $this->another_foo->shouldReceive('savePermissions')->times(2);
         $this->another_foo->shouldReceive('savePermissions')->with('', array(2), 'v1')->at(0);
         $this->another_foo->shouldReceive('savePermissions')->with('', array(3), 'v2')->at(1);
     }

@@ -92,6 +92,7 @@ class ST2Mockery
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
 
         $nodes_to_delete = [];
+        //$traverser->addVisitor(new ParentConnector());
         $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path, $nodes_to_delete));
         $traverser->addVisitor(new DirnameToDIRContVisitor());
         $traverser->addVisitor(new NormalizeSetUpAndTearDownVisitor());

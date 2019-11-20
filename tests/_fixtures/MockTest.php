@@ -189,6 +189,11 @@ class MockTest
         stub($this->widget_dao)->createColumn()->returnsAt(1, 222);
     }
 
+    public function testConvertThrows()
+    {
+        stub($widget)->create()->throws(new \Exception("foo"));
+    }
+
     public function testExpectAtLeastOnce()
     {
         expect($dao)->updateWidgetRankByWidgetId()->atLeastOnce();

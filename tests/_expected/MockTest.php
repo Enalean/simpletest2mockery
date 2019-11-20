@@ -184,6 +184,11 @@ class MockTest
         $this->widget_dao->shouldReceive('createColumn')->andReturns(222)->ordered();
     }
 
+    public function testConvertThrows()
+    {
+        $widget->shouldReceive('create')->andThrows(new \Exception("foo"));
+    }
+
     public function testExpectAtLeastOnce()
     {
         $dao->shouldReceive('updateWidgetRankByWidgetId')->atLeast()->once();

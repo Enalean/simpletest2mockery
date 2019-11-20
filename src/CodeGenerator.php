@@ -38,7 +38,7 @@ class CodeGenerator
         $spy_args = array_merge($spy_args, $contructor_args);
         return self::getMockeryStaticCallTo('spy', $spy_args);
     }
-
+    
     private static function getMockeryStaticCallTo(string $method_name, array $args = []): Node\Expr\StaticCall
     {
         return new Node\Expr\StaticCall(
@@ -107,6 +107,15 @@ class CodeGenerator
         return new Node\Expr\MethodCall(
             $node,
             'andReturns',
+            $args
+        );
+    }
+
+    public static function andThrows(Node $node, array $args): Node\Expr\MethodCall
+    {
+        return new Node\Expr\MethodCall(
+            $node,
+            'andThrows',
             $args
         );
     }

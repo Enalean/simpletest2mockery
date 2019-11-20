@@ -76,6 +76,9 @@ class ConvertStubVisitor extends NodeVisitorAbstract
                 CodeGenerator::getReturn($node->var, $node->args)
             );
         }
+        if ($this->isCallTo($node, 'throws')) {
+            return CodeGenerator::andThrows($node->var, $node->args);
+        }
 
         if ($this->isCallToExpectOrStubFunctions($node)) {
             return $this->getFromExpectOrStub($node->var->args[0]->value, (string) $node->name, $node->args);

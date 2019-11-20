@@ -33,10 +33,18 @@ class ConvertStubVisitor extends NodeVisitorAbstract
         if (isset($node->args) && is_array($node->args)) {
             foreach ($node->args as $argument) {
                 if ($this->isRecurseCallToExpectOrStub($argument->value)) {
-                    $argument->value->setAttribute(self::TAG_GET_MOCK, true);
+                    $this->tagNodeShouldGetMock($argument->value);
                 }
             }
         }
+        if ($node instanceof Node\Expr\Assign && $this->isRecurseCallToExpectOrStub($node->expr)) {
+            $this->tagNodeShouldGetMock($node->expr);
+        }
+    }
+
+    private function tagNodeShouldGetMock(Node $node): void
+    {
+        $node->setAttribute(self::TAG_GET_MOCK, true);
     }
 
     public function leaveNode(Node $node)

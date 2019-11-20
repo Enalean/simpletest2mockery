@@ -160,6 +160,7 @@ class MockTest
         stub($dao)->save()->count(3);
 
         new BazBaz(stub('FooDirectStubInCall')->searchByTitle(1, 2)->returns(true));
+        $baz = stub('FooDirectStubInAssignment')->searchByTitle(1, 2)->returns(true);
     }
 
     public function testConvertReturnsVariousDar()

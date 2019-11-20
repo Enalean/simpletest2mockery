@@ -155,6 +155,7 @@ class MockTest
         $dao->shouldReceive('save')->times(3);
 
         new BazBaz(\Mockery::spy(\FooDirectStubInCall::class)->shouldReceive('searchByTitle')->with(1, 2)->andReturns(true)->getMock());
+        $baz = \Mockery::spy(\FooDirectStubInAssignment::class)->shouldReceive('searchByTitle')->with(1, 2)->andReturns(true)->getMock();
     }
 
     public function testConvertReturnsVariousDar()

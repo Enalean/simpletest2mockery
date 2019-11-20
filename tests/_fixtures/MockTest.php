@@ -183,6 +183,12 @@ class MockTest
         expect($this->another_foo)->savePermissions('', array(3), 'v2')->at(1);
     }
 
+    public function testConvertReturnsAt()
+    {
+        stub($this->widget_dao)->createColumn()->returnsAt(0, 122);
+        stub($this->widget_dao)->createColumn()->returnsAt(1, 222);
+    }
+
     public function testExpectAtLeastOnce()
     {
         expect($dao)->updateWidgetRankByWidgetId()->atLeastOnce();

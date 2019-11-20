@@ -178,6 +178,12 @@ class MockTest
         $this->another_foo->shouldReceive('savePermissions')->with('', array(3), 'v2')->ordered();
     }
 
+    public function testConvertReturnsAt()
+    {
+        $this->widget_dao->shouldReceive('createColumn')->andReturns(122)->ordered();
+        $this->widget_dao->shouldReceive('createColumn')->andReturns(222)->ordered();
+    }
+
     public function testExpectAtLeastOnce()
     {
         $dao->shouldReceive('updateWidgetRankByWidgetId')->atLeast()->once();

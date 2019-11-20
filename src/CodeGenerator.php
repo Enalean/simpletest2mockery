@@ -57,6 +57,14 @@ class CodeGenerator
         );
     }
 
+    public static function ordered(Node $node)
+    {
+        return new Node\Expr\MethodCall(
+            $node,
+            'ordered'
+        );
+    }
+
     public static function getWith(Node $node, array $args): Node\Expr\MethodCall
     {
         return new Node\Expr\MethodCall(

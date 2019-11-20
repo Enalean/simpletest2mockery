@@ -171,11 +171,11 @@ class MockTest
         $foo->shouldReceive('searchByTitle')->once();
     }
 
-    public function testHalfBackedConvertOfExpectIsBetterThanNothing()
+    public function testConvertExpectsWithAt()
     {
         $this->another_foo->shouldReceive('savePermissions')->times(2);
-        $this->another_foo->shouldReceive('savePermissions')->with('', array(2), 'v1')->at(0);
-        $this->another_foo->shouldReceive('savePermissions')->with('', array(3), 'v2')->at(1);
+        $this->another_foo->shouldReceive('savePermissions')->with('', array(2), 'v1')->ordered();
+        $this->another_foo->shouldReceive('savePermissions')->with('', array(3), 'v2')->ordered();
     }
 
     public function testExpectAtLeastOnce()

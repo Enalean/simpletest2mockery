@@ -176,7 +176,7 @@ class MockTest
         expect($foo)->searchByTitle()->once();
     }
 
-    public function testHalfBackedConvertOfExpectIsBetterThanNothing()
+    public function testConvertExpectsWithAt()
     {
         expect($this->another_foo)->savePermissions()->count(2);
         expect($this->another_foo)->savePermissions('', array(2), 'v1')->at(0);

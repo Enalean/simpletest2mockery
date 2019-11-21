@@ -23,8 +23,12 @@ namespace ST2Mockery;
 
 use PhpParser\{Lexer, NodeTraverser, NodeVisitor, Parser, PrettyPrinter, NodeDumper};
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
-class ST2Mockery
+class ST2Mockery extends Command
 {
     private $oldTokens;
     private $oldStmts;
@@ -38,14 +42,19 @@ class ST2Mockery
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
+        parent::__construct();
     }
 
-    public function run(array $argv)
+    protected function configure()
     {
-        if (! isset($argv[1])) {
-            throw new \RuntimeException("Please provide a file or directory as first parameter");
-        }
-        $filepath = $argv[1];
+        $this->setName('to-mockery')
+            ->setDescription('Convert simpletest mocks to mockery')
+            ->addArgument('file', InputArgument::REQUIRED, 'File or directory to convert');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $filepath = $input->getArgument('file');
 
         if (is_dir($filepath)) {
             $rii = new FilterTestCase(
@@ -61,10 +70,10 @@ class ST2Mockery
                     $this->logger->error("Unable to convert {$file->getPathname()}: ".$exception->getMessage());
                 }
             }
-            return;
+            return 0;
         } elseif (file_exists($filepath)) {
             $this->parseAndSave($filepath);
-            return;
+            return 0;
         }
         throw new \RuntimeException("$filepath is neither a file nor a directory");
     }

@@ -1,7 +1,8 @@
 {
     "require": {
         "nikic/php-parser": "^4",
-        "monolog/monolog": "^2.0"
+        "monolog/monolog": "^2.0",
+        "symfony/console": "^5.0"
     },
     "autoload": {
       "psr-4": {"ST2Mockery\\": "src/"}

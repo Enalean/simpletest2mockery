@@ -29,8 +29,11 @@ $log = new Logger('log');
 $log->pushHandler(new ErrorLogHandler());
 
 try {
-    $reflector = new \ST2Mockery\ST2Mockery($log);
-    $reflector->run($argv);
+
+    $app = new \Symfony\Component\Console\Application();
+    $app->add(new ST2Mockery\ST2Mockery($log));
+
+    $app->run();
 } catch (Exception $exception) {
     $log->critical($exception->getMessage());
     exit(1);

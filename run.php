@@ -32,7 +32,7 @@ try {
 
     $app = new \Symfony\Component\Console\Application();
     $app->add(new ST2Mockery\ST2Mockery($log));
-
+    $app->add(new \ST2Mockery\PHPUnit\ToPHPUnitCommand($log));
     $app->run();
 } catch (Exception $exception) {
     $log->critical($exception->getMessage());

@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) Enalean, 2018. All Rights Reserved.
+ * Copyright (c) Enalean, 2019-Present. All Rights Reserved.
  *
  * This file is a part of Tuleap.
  *
@@ -16,37 +16,31 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Tuleap. If not, see <http://www.gnu.org/licenses/>.
+ *
  */
+
+declare(strict_types=1);
 
 namespace ST2Mockery;
 
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use ST2Mockery\PHPUnit\ToPHPUnitCommand;
 
-class ST2MockeryTest extends TestCase
+class ConvertToPHPUnitTest extends TestCase
 {
-    /**
-     * @dataProvider filenames
-     */
-    public function testConversion(string $filename): void
+    public function testConversion(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
 
-        $converter = new ST2Mockery($logger);
-        $converter->load( __DIR__ . '/_fixtures/' . $filename);
+        $converter = new ToPHPUnitCommand($logger);
+        $converter->load( __DIR__ . '/_fixtures/SimpleTest.class.php');
+
+        $converter->printStatments();
 
         $this->assertStringEqualsFile(
-            __DIR__ . '/_expected/' . $filename,
+            __DIR__ . '/_expected/SimpleTest.php',
             $converter->getNewCodeAsString()
         );
-    }
-
-    public function filenames()
-    {
-        return [
-            ['DirnameTest.php'],
-            ['SetUpTearDownTest.php'],
-            ['MockTest.php']
-        ];
     }
 }

@@ -1,6 +1,6 @@
-<?php declare(strict_types=1);
+<?php
 /**
- * Copyright (c) Enalean, 2018. All Rights Reserved.
+ * Copyright (c) Enalean, 2019-Present. All Rights Reserved.
  *
  * This file is a part of Tuleap.
  *
@@ -19,21 +19,20 @@
  *
  */
 
-namespace ST2Mockery;
+declare(strict_types=1);
+
+namespace ST2Mockery\PHPUnit;
 
 use PhpParser\{Lexer, NodeTraverser, NodeVisitor, Parser, PrettyPrinter, NodeDumper};
 use Psr\Log\LoggerInterface;
+use ST2Mockery\NodeRemovalVisitor;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ST2Mockery extends Command
+class ToPHPUnitCommand extends Command
 {
-    private $oldTokens;
-    private $oldStmts;
-    private $newStmts;
-
     /**
      * @var LoggerInterface
      */
@@ -41,51 +40,34 @@ class ST2Mockery extends Command
 
     public function __construct(LoggerInterface $logger)
     {
-        $this->logger = $logger;
         parent::__construct();
+        $this->logger = $logger;
     }
 
     protected function configure()
     {
-        $this->setName('to-mockery')
-            ->setDescription('Convert simpletest mocks to mockery')
+        $this->setName('to-phpunit')
+            ->setDescription('Convert file to phpunit (from simpletest case)')
             ->addArgument('file', InputArgument::REQUIRED, 'File or directory to convert');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function execute(InputInterface $input, OutputInterface $output)
     {
         $filepath = $input->getArgument('file');
-
-        if (is_dir($filepath)) {
-            $rii = new FilterTestCase(
-                new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($filepath),
-                    \RecursiveIteratorIterator::SELF_FIRST
-                )
-            );
-            foreach ($rii as $file) {
-                try {
-                    $this->parseAndSave($file->getPathname());
-                } catch (\Exception $exception) {
-                    $this->logger->error("Unable to convert {$file->getPathname()}: ".$exception->getMessage());
-                }
-            }
-            return 0;
-        } elseif (file_exists($filepath)) {
+        if (is_file($filepath)) {
             $this->parseAndSave($filepath);
-            return 0;
         }
-        throw new \RuntimeException("$filepath is neither a file nor a directory");
+        return 0;
     }
 
-    public function parseAndSave(string $path)
+    public function parseAndSave(string $path): void
     {
         $this->load($path);
         //$this->printStatments();
         $this->save($path);
     }
 
-    public function load(string $path)
+    public function load(string $path): void
     {
         $this->logger->info("Processing $path");
         $lexer = new Lexer\Emulative([
@@ -101,13 +83,7 @@ class ST2Mockery extends Command
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
 
         $nodes_to_delete = [];
-        //$traverser->addVisitor(new ParentConnector());
-        $traverser->addVisitor(new SimpleTestToMockeryVisitor($this->logger, $path, $nodes_to_delete));
-        $traverser->addVisitor(new DirnameToDIRContVisitor());
-        $traverser->addVisitor(new NormalizeSetUpAndTearDownVisitor());
-        $traverser->addVisitor(new ConvertMockGenerationVisitor($this->logger, $path));
-        $traverser->addVisitor(new ConvertStubVisitor());
-        $traverser->addVisitor(new ConvertMockHelpers());
+        $traverser->addVisitor(new ConvertToPHPUnitVisitor());
 
         $this->oldStmts = $parser->parse(file_get_contents($path));
         $this->oldTokens = $lexer->getTokens();
@@ -120,13 +96,13 @@ class ST2Mockery extends Command
         $this->newStmts = $traverser2->traverse($this->newStmts);
     }
 
-    public function printStatments()
+    public function printStatments(): void
     {
         $dumper = new NodeDumper;
         echo $dumper->dump($this->newStmts) . "\n";
     }
 
-    public function getNewCodeAsString()
+    public function getNewCodeAsString(): string
     {
         $printer = new PrettyPrinter\Standard(['shortArraySyntax' => true]);
         return $printer->printFormatPreserving($this->newStmts, $this->oldStmts, $this->oldTokens);
@@ -134,6 +110,6 @@ class ST2Mockery extends Command
 
     public function save(string $path): void
     {
-        file_put_contents($path, $this->getNewCodeAsString($path));
+        file_put_contents($path, $this->getNewCodeAsString());
     }
 }

@@ -37,11 +37,21 @@ class SimpleTest extends \PHPUnit\Framework\TestCase
         $this->user = \Mockery::spy(\PFUser::class);
     }
 
+    protected function tearDown() : void
+    {
+        ForgeConfig::restore();
+        parent::tearDown();
+    }
+
     public function testItRetrievesRestrictedStatusWhenPlatformAllowsRestricted() : void
     {
         ForgeConfig::set(ForgeAccess::CONFIG, ForgeAccess::RESTRICTED);
         $this->user->shouldReceive('isRestricted')->andReturns(false);
 
         $this->assertEquals($this->user_status_builder->getStatus($this->user), $this->status_with_restricted);
+    }
+
+    function getSomeBuilder() {
+        return new Stuff();
     }
 }

@@ -37,11 +37,21 @@ class SimpleTest extends \TuleapTestCase
         $this->user = \Mockery::spy(\PFUser::class);
     }
 
+    public function tearDown()
+    {
+        ForgeConfig::restore();
+        parent::tearDown();
+    }
+
     public function itRetrievesRestrictedStatusWhenPlatformAllowsRestricted()
     {
         ForgeConfig::set(ForgeAccess::CONFIG, ForgeAccess::RESTRICTED);
         $this->user->shouldReceive('isRestricted')->andReturns(false);
 
         $this->assertEqual($this->user_status_builder->getStatus($this->user), $this->status_with_restricted);
+    }
+
+    function getSomeBuilder() {
+        return new Stuff();
     }
 }

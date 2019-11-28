@@ -54,11 +54,14 @@ class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
         }
 
         if ($node instanceof Node\Stmt\ClassMethod) {
-            if ($node->name->name === 'setUp') {
+            if ($node->name->name === 'setUp' || $node->name->name === 'tearDown') {
                 return new Node\Stmt\ClassMethod($node->name, ['flags' => Node\Stmt\Class_::MODIFIER_PROTECTED, 'returnType' => 'void', 'stmts' => $node->stmts], $node->getAttributes());
             }
-            if (strpos($node->name->name, 'test') !== 0) {
+            if (strpos($node->name->name, 'it') === 0) {
                 $node->name->name = 'test'.ucfirst($node->name->name);
+                $node->returnType = new Node\Name('void');
+            }
+            if (strpos($node->name->name, 'test') === 0) {
                 $node->returnType = new Node\Name('void');
             }
         }

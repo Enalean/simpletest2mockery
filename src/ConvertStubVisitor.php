@@ -121,7 +121,9 @@ class ConvertStubVisitor extends NodeVisitorAbstract
 
     private function getFromExpectOrStub(Node $mock_target, string $method_name, array $args)
     {
-        if ($mock_target instanceof Node\Expr\Variable || $mock_target instanceof Node\Expr\PropertyFetch) {
+        if ($mock_target instanceof Node\Expr\Variable ||
+            $mock_target instanceof Node\Expr\PropertyFetch ||
+            $mock_target instanceof Node\Expr\ArrayDimFetch) {
             if (count($args) === 0) {
                 return CodeGenerator::getShouldReceive($mock_target, $method_name);
             }

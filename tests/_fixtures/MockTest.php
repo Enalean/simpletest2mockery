@@ -219,4 +219,9 @@ class MockTest
         $foo = new MockFoo($this);
         $foo->throwOn('purgeFiles', new RuntimeException("Error while doing things"));
     }
+
+    public function testConvertStubOnGlobals()
+    {
+        stub($GLOBALS['Response'])->addFeedback()->never();
+    }
 }

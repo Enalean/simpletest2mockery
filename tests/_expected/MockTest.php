@@ -214,4 +214,9 @@ class MockTest
         $foo = \Mockery::spy(\Foo::class);
         $foo->shouldReceive('purgeFiles')->andThrows(new RuntimeException("Error while doing things"));
     }
+
+    public function testConvertStubOnGlobals()
+    {
+        $GLOBALS['Response']->shouldReceive('addFeedback')->never();
+    }
 }

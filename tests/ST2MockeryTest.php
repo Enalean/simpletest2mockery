@@ -35,6 +35,8 @@ class ST2MockeryTest extends TestCase
         $converter = new ST2Mockery($logger);
         $converter->load( __DIR__ . '/_fixtures/' . $filename);
 
+        // $converter->printStatments();
+
         $this->assertStringEqualsFile(
             __DIR__ . '/_expected/' . $filename,
             $converter->getNewCodeAsString()

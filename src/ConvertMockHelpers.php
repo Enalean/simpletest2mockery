@@ -33,6 +33,12 @@ class ConvertMockHelpers extends NodeVisitorAbstract
             $node->name = new Node\Name('aMockeryTracker');
         }
 
+        if ($node instanceof Node\Expr\FuncCall && (string)$node->name === 'aUser') {
+            return new Node\Expr\New_(
+                new Node\Name\FullyQualified('UserTestBuilder')
+            );
+        }
+
         if ($this->isCallTo($node, 'build') && $this->isRootNode($node, 'aMockProject')) {
             $with = $this->collectWith($node);
             $constructor_args = CodeGenerator::getAsArgsForMethodCall(

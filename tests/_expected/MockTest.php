@@ -209,6 +209,11 @@ class MockTest
         $project = \Mockery::spy(\Project::class, ['getID' => 111, 'getUnixName' => 'foo', 'isPublic' => false]);
     }
 
+    public function testConvertAUser()
+    {
+        $this->user = (new \UserTestBuilder())->build();
+    }
+
     public function testConvertThrowOn()
     {
         $foo = \Mockery::spy(\Foo::class);

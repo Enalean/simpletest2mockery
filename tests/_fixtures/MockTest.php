@@ -214,6 +214,11 @@ class MockTest
         $project = aMockProject()->withId(111)->withUnixName('foo')->build();
     }
 
+    public function testConvertAUser()
+    {
+        $this->user = aUser()->build();
+    }
+
     public function testConvertThrowOn()
     {
         $foo = new MockFoo($this);

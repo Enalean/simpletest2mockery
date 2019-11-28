@@ -25,10 +25,12 @@ namespace ST2Mockery\PHPUnit;
 
 use PhpParser\{Lexer, NodeTraverser, NodeVisitor, Parser, PrettyPrinter, NodeDumper};
 use Psr\Log\LoggerInterface;
+use ST2Mockery\FilterTestCase;
 use ST2Mockery\NodeRemovalVisitor;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ToPHPUnitCommand extends Command
@@ -50,17 +52,30 @@ class ToPHPUnitCommand extends Command
             ->setDescription('Convert file to phpunit (from simpletest case)')
             ->addArgument('source', InputArgument::REQUIRED, 'File or directory to convert')
             ->addArgument('target', InputArgument::REQUIRED, 'Directory to place new file')
-            ->addArgument('source_basedir', InputArgument::OPTIONAL, 'Part of source path to truncate');
+            ->addOption('delete-source', '', InputOption::VALUE_NONE, 'Delete the source file');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $source_filepath  = $input->getArgument('source');
         $target_directory = $input->getArgument('target');
-        $source_basedir   = $input->getArgument('source_basedir');
-        if (is_file($source_filepath)) {
+        if (is_dir($source_filepath)) {
+            $rii = new FilterTestCase(
+                new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($source_filepath),
+                    \RecursiveIteratorIterator::SELF_FIRST
+                )
+            );
+            foreach ($rii as $file) {
+                $convert_to_phpunit_visitor = $this->load($file->getPathname());
+                $saved = $this->save($this->getTargetDirectoy($file->getPathname(), $target_directory, $source_filepath), $convert_to_phpunit_visitor);
+                if ($saved && $input->getOption('delete-source')) {
+                    unlink($file->getPathname());
+                }
+            }
+        } elseif (is_file($source_filepath)) {
             $convert_to_phpunit_visitor = $this->load($source_filepath);
-            $this->save($this->getTargetDirectoy($source_filepath, $target_directory, $source_basedir), $convert_to_phpunit_visitor);
+            $this->save($target_directory, $convert_to_phpunit_visitor);
         }
         return 0;
     }
@@ -102,19 +117,24 @@ class ToPHPUnitCommand extends Command
         return $printer->printFormatPreserving($this->newStmts, $this->oldStmts, $this->oldTokens);
     }
 
-    public function save(string $directory_path, ConvertToPHPUnitVisitor $convert_to_PHP_unit_visitor): void
+    public function save(string $directory_path, ConvertToPHPUnitVisitor $convert_to_PHP_unit_visitor): bool
     {
+        $target_filename = $directory_path . '/' . $convert_to_PHP_unit_visitor->getClassName().'.php';
+        if (is_file($target_filename)) {
+            $this->logger->error($target_filename.' already exists, file not saved');
+            return false;
+        }
         if (! is_dir($directory_path)) {
             mkdir($directory_path, 0755, true);
         }
-        file_put_contents($directory_path . '/' . $convert_to_PHP_unit_visitor->getClassName().'.php', $this->getNewCodeAsString());
+        file_put_contents($target_filename, $this->getNewCodeAsString());
+        return true;
     }
 
     private function getTargetDirectoy(string $source_filepath, string $target_directory, ?string $source_basedir)
     {
         if ($source_basedir !== null && strpos($source_filepath, $source_basedir) === 0) {
             $source_directory = dirname($source_filepath);
-            $common_part = strlen($source_basedir);
             $relative = substr($source_directory, strlen($source_basedir) + 1);
             return $target_directory . '/' . $relative;
         }

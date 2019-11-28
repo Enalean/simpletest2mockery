@@ -26,12 +26,25 @@ namespace ST2Mockery\PHPUnit;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
+use Psr\Log\LoggerInterface;
 
 class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
 {
+    private $class_name;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function leaveNode(Node $node)
     {
-        if ($node instanceof Node\Stmt\Class_ && (string) $node->extends->parts[0] === 'TuleapTestCase') {
+        if ($node instanceof Node\Stmt\Class_ && isset($node->extends) && (string) $node->extends->parts[0] === 'TuleapTestCase') {
+            $this->setClassName($node);
             $stmts = [
                 new Node\Stmt\TraitUse([new Node\Name\FullyQualified('Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration')]),
             ];
@@ -62,5 +75,19 @@ class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
         if ($node instanceof Node\Stmt\Expression && $node->expr instanceof Node\Expr\MethodCall && (string) $node->expr->name === 'setUpGlobalsMockery') {
             return NodeTraverser::REMOVE_NODE;
         }
+    }
+
+    private function setClassName(Node\Stmt\Class_ $node)
+    {
+        if ($this->class_name === null) {
+            $this->class_name = (string) $node->name;
+        } else {
+            $this->logger->error('Class name already set, you will need to manually split the file');
+        }
+    }
+
+    public function getClassName()
+    {
+        return $this->class_name;
     }
 }

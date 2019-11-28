@@ -36,7 +36,7 @@ class ConvertToPHPUnitTest extends TestCase
         $converter = new ToPHPUnitCommand($logger);
         $converter->load( __DIR__ . '/_fixtures/SimpleTest.class.php');
 
-        $converter->printStatments();
+        // $converter->printStatments();
 
         $this->assertStringEqualsFile(
             __DIR__ . '/_expected/SimpleTest.php',

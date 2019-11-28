@@ -48,26 +48,24 @@ class ToPHPUnitCommand extends Command
     {
         $this->setName('to-phpunit')
             ->setDescription('Convert file to phpunit (from simpletest case)')
-            ->addArgument('file', InputArgument::REQUIRED, 'File or directory to convert');
+            ->addArgument('source', InputArgument::REQUIRED, 'File or directory to convert')
+            ->addArgument('target', InputArgument::REQUIRED, 'Directory to place new file')
+            ->addArgument('source_basedir', InputArgument::OPTIONAL, 'Part of source path to truncate');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $filepath = $input->getArgument('file');
-        if (is_file($filepath)) {
-            $this->parseAndSave($filepath);
+        $source_filepath  = $input->getArgument('source');
+        $target_directory = $input->getArgument('target');
+        $source_basedir   = $input->getArgument('source_basedir');
+        if (is_file($source_filepath)) {
+            $convert_to_phpunit_visitor = $this->load($source_filepath);
+            $this->save($this->getTargetDirectoy($source_filepath, $target_directory, $source_basedir), $convert_to_phpunit_visitor);
         }
         return 0;
     }
 
-    public function parseAndSave(string $path): void
-    {
-        $this->load($path);
-        //$this->printStatments();
-        $this->save($path);
-    }
-
-    public function load(string $path): void
+    public function load(string $path): ConvertToPHPUnitVisitor
     {
         $this->logger->info("Processing $path");
         $lexer = new Lexer\Emulative([
@@ -81,19 +79,15 @@ class ToPHPUnitCommand extends Command
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
-
-        $nodes_to_delete = [];
-        $traverser->addVisitor(new ConvertToPHPUnitVisitor());
+        $convert_to_PHPUnit_visitor = new ConvertToPHPUnitVisitor($this->logger);
+        $traverser->addVisitor($convert_to_PHPUnit_visitor);
 
         $this->oldStmts = $parser->parse(file_get_contents($path));
         $this->oldTokens = $lexer->getTokens();
 
         $this->newStmts = $traverser->traverse($this->oldStmts);
 
-        $traverser2 = new NodeTraverser();
-        $traverser2->addVisitor(new NodeRemovalVisitor($nodes_to_delete));
-
-        $this->newStmts = $traverser2->traverse($this->newStmts);
+        return $convert_to_PHPUnit_visitor;
     }
 
     public function printStatments(): void
@@ -108,8 +102,22 @@ class ToPHPUnitCommand extends Command
         return $printer->printFormatPreserving($this->newStmts, $this->oldStmts, $this->oldTokens);
     }
 
-    public function save(string $path): void
+    public function save(string $directory_path, ConvertToPHPUnitVisitor $convert_to_PHP_unit_visitor): void
     {
-        file_put_contents($path, $this->getNewCodeAsString());
+        if (! is_dir($directory_path)) {
+            mkdir($directory_path, 0755, true);
+        }
+        file_put_contents($directory_path . '/' . $convert_to_PHP_unit_visitor->getClassName().'.php', $this->getNewCodeAsString());
+    }
+
+    private function getTargetDirectoy(string $source_filepath, string $target_directory, ?string $source_basedir)
+    {
+        if ($source_basedir !== null && strpos($source_filepath, $source_basedir) === 0) {
+            $source_directory = dirname($source_filepath);
+            $common_part = strlen($source_basedir);
+            $relative = substr($source_directory, strlen($source_basedir) + 1);
+            return $target_directory . '/' . $relative;
+        }
+        return $target_directory;
     }
 }

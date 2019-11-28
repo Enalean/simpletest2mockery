@@ -49,6 +49,10 @@ class SimpleTest extends \TuleapTestCase
         $this->user->shouldReceive('isRestricted')->andReturns(false);
 
         $this->assertEqual($this->user_status_builder->getStatus($this->user), $this->status_with_restricted);
+
+        $this->assertIsA($generic_user, 'GenericUser');
+
+        $this->assertCount($all, 1);
     }
 
     function getSomeBuilder() {

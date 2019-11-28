@@ -75,6 +75,34 @@ class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
             );
         }
 
+        if ($node instanceof Node\Expr\MethodCall && (string) $node->name === 'assertIsA') {
+            return new Node\Expr\MethodCall(
+                $node->var,
+                'assertInstanceOf',
+                [
+                    new Node\Arg(
+                        new Node\Expr\ClassConstFetch(new Node\Name\FullyQualified((string) $node->args[1]->value->value), 'class')
+                    ),
+                    $node->args[0],
+                ],
+                $node->getAttributes()
+            );
+        }
+
+        if ($node instanceof Node\Expr\MethodCall && (string) $node->name === 'assertCount') {
+            return new Node\Expr\MethodCall(
+                $node->var,
+                'assertCount',
+                [
+                    new Node\Arg(
+                        new Node\Scalar\LNumber($node->args[1]->value->value)
+                    ),
+                    $node->args[0],
+                ],
+                $node->getAttributes()
+            );
+        }
+
         if ($node instanceof Node\Stmt\Expression && $node->expr instanceof Node\Expr\MethodCall && (string) $node->expr->name === 'setUpGlobalsMockery') {
             return NodeTraverser::REMOVE_NODE;
         }

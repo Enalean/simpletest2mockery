@@ -49,6 +49,10 @@ class SimpleTest extends \PHPUnit\Framework\TestCase
         $this->user->shouldReceive('isRestricted')->andReturns(false);
 
         $this->assertEquals($this->user_status_builder->getStatus($this->user), $this->status_with_restricted);
+
+        $this->assertInstanceOf(\GenericUser::class, $generic_user);
+
+        $this->assertCount(1, $all);
     }
 
     function getSomeBuilder() {

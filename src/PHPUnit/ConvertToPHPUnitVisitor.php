@@ -35,10 +35,12 @@ class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
      * @var LoggerInterface
      */
     private $logger;
+    private $filepath;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger, string $filepath)
     {
         $this->logger = $logger;
+        $this->filepath = $filepath;
     }
 
     public function leaveNode(Node $node)
@@ -113,7 +115,7 @@ class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
         if ($this->class_name === null) {
             $this->class_name = (string) $node->name;
         } else {
-            $this->logger->error('Class name already set, you will need to manually split the file');
+            $this->logger->error(sprintf('Class name already set, you will need to manually split %s', $this->filepath));
         }
     }
 

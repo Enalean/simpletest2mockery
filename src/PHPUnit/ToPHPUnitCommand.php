@@ -32,6 +32,8 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\PhpExecutableFinder;
+use Symfony\Component\Process\Process;
 
 class ToPHPUnitCommand extends Command
 {
@@ -52,7 +54,7 @@ class ToPHPUnitCommand extends Command
             ->setDescription('Convert file to phpunit (from simpletest case)')
             ->addArgument('source', InputArgument::REQUIRED, 'File or directory to convert')
             ->addArgument('target', InputArgument::REQUIRED, 'Directory to place new file')
-            ->addOption('delete-source', '', InputOption::VALUE_NONE, 'Delete the source file');
+            ->addOption('run-tests', '', InputOption::VALUE_NONE, 'Run tests on generated file, if tests are green, prepare for commit otherwise trash the code');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -69,8 +71,19 @@ class ToPHPUnitCommand extends Command
             foreach ($rii as $file) {
                 $convert_to_phpunit_visitor = $this->load($file->getPathname());
                 $saved = $this->save($this->getTargetDirectoy($file->getPathname(), $target_directory, $source_filepath), $convert_to_phpunit_visitor);
-                if ($saved && $input->getOption('delete-source')) {
-                    unlink($file->getPathname());
+                if ($saved !== '' && $input->getOption('run-tests')) {
+                    $phpunit_command = ['./src/vendor/bin/phpunit', '-c', 'tests/phpunit/phpunit.xml', $saved];
+                    if (getenv('PHP') !== false) {
+                        $phpunit_command = array_merge([getenv('PHP')], $phpunit_command);
+                    }
+                    $process = new Process($phpunit_command);
+                    $process->run();
+                    if ($process->isSuccessful()) {
+                        (new Process(['git', 'rm', $file->getPathname()]))->mustRun();
+                        (new Process(['git', 'add', $saved]))->mustRun();
+                    } else {
+                        unlink($saved);
+                    }
                 }
             }
         } elseif (is_file($source_filepath)) {
@@ -94,7 +107,7 @@ class ToPHPUnitCommand extends Command
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NodeVisitor\CloningVisitor());
-        $convert_to_PHPUnit_visitor = new ConvertToPHPUnitVisitor($this->logger);
+        $convert_to_PHPUnit_visitor = new ConvertToPHPUnitVisitor($this->logger, $path);
         $traverser->addVisitor($convert_to_PHPUnit_visitor);
 
         $this->oldStmts = $parser->parse(file_get_contents($path));
@@ -117,18 +130,18 @@ class ToPHPUnitCommand extends Command
         return $printer->printFormatPreserving($this->newStmts, $this->oldStmts, $this->oldTokens);
     }
 
-    public function save(string $directory_path, ConvertToPHPUnitVisitor $convert_to_PHP_unit_visitor): bool
+    public function save(string $directory_path, ConvertToPHPUnitVisitor $convert_to_PHP_unit_visitor): string
     {
         $target_filename = $directory_path . '/' . $convert_to_PHP_unit_visitor->getClassName().'.php';
         if (is_file($target_filename)) {
             $this->logger->error($target_filename.' already exists, file not saved');
-            return false;
+            return '';
         }
         if (! is_dir($directory_path)) {
             mkdir($directory_path, 0755, true);
         }
         file_put_contents($target_filename, $this->getNewCodeAsString());
-        return true;
+        return $target_filename;
     }
 
     private function getTargetDirectoy(string $source_filepath, string $target_directory, ?string $source_basedir)

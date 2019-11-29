@@ -224,4 +224,10 @@ class MockTest
     {
         $GLOBALS['Response']->shouldReceive('addFeedback')->never();
     }
+
+    public function testExpectations()
+    {
+        $this->expectException(\User\XML\Import\UserCannotBeCreatedException::class);
+        $this->expectException(PFUser::class);
+    }
 }

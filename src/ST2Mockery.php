@@ -108,6 +108,7 @@ class ST2Mockery extends Command
         $traverser->addVisitor(new ConvertMockGenerationVisitor($this->logger, $path));
         $traverser->addVisitor(new ConvertStubVisitor());
         $traverser->addVisitor(new ConvertMockHelpers());
+        $traverser->addVisitor(new ConvertExpectationsVisitor());
 
         $this->oldStmts = $parser->parse(file_get_contents($path));
         $this->oldTokens = $lexer->getTokens();

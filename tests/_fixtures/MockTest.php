@@ -71,6 +71,7 @@ class MockTest
     public function testWhithMockHelper()
     {
         $bar = mock('Barbell\Bar');
+        $password_verifier = mock(\Tuleap\User\PasswordVerifier::class);
     }
 
     public function testPartialMock()

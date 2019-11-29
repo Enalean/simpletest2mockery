@@ -116,6 +116,7 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
             $this->logger->warning("Instantiation based on variables not managed in $this->filepath at L".$node->getLine());
             return $node;
         }
+        var_dump($node);
         $instantiated_class = (string) $node->class;
         $this->checkInstantiatedClass($instantiated_class);
         if (isset($this->mocks[$instantiated_class])) {
@@ -148,9 +149,9 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
             );
     }
 
-    private function getNewMockerySpy(string $class_name)
+    private function getNewMockerySpy($class_name)
     {
-        $this->checkInstantiatedClass($class_name);
+        //$this->checkInstantiatedClass($class_name);
         return CodeGenerator::getNewMockerySpy($class_name);
     }
 
@@ -187,6 +188,9 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
     {
         if ($node->args[0]->value instanceof Node\Scalar\String_) {
             return $this->getNewMockerySpy((string) $node->args[0]->value->value);
+        }
+        if ($node->args[0]->value instanceof Node\Expr\ClassConstFetch) {
+            return $this->getNewMockerySpy($node->args[0]->value);
         }
         return null;
     }

@@ -27,15 +27,17 @@ use PhpParser\Node;
 
 class CodeGenerator
 {
-    public static function getNewMockerySpy(string $class_name, array $contructor_args = []): Node\Expr\StaticCall
+    public static function getNewMockerySpy($class_name, array $contructor_args = []): Node\Expr\StaticCall
     {
-        $spy_args = [
-            new Node\Expr\ClassConstFetch(
-                new Node\Name('\\'.$class_name),
+        if ($class_name instanceof Node\Expr) {
+            $class_name_expr = $class_name;
+        } else {
+            $class_name_expr = new Node\Expr\ClassConstFetch(
+                new Node\Name\FullyQualified($class_name),
                 new Node\Identifier('class')
-            )
-        ];
-        $spy_args = array_merge($spy_args, $contructor_args);
+            );
+        }
+        $spy_args = array_merge([$class_name_expr], $contructor_args);
         return self::getMockeryStaticCallTo('spy', $spy_args);
     }
     

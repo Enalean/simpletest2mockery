@@ -66,6 +66,7 @@ class MockTest
     public function testWhithMockHelper()
     {
         $bar = \Mockery::spy(\Barbell\Bar::class);
+        $password_verifier = \Mockery::spy(\Tuleap\User\PasswordVerifier::class);
     }
 
     public function testPartialMock()

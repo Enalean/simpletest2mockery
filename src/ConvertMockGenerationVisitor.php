@@ -116,7 +116,9 @@ class ConvertMockGenerationVisitor extends NodeVisitorAbstract
             $this->logger->warning("Instantiation based on variables not managed in $this->filepath at L".$node->getLine());
             return $node;
         }
-        var_dump($node);
+        if ($node->class instanceof Node\Stmt\Class_) {
+            return $node;
+        }
         $instantiated_class = (string) $node->class;
         $this->checkInstantiatedClass($instantiated_class);
         if (isset($this->mocks[$instantiated_class])) {

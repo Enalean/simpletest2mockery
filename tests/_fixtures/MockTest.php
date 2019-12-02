@@ -236,4 +236,12 @@ class MockTest
         $this->expectException('User\XML\Import\UserCannotBeCreatedException');
         $this->expectException(PFUser::class);
     }
+
+    public function testAnonymousClass()
+    {
+        $us1 = 'foo';
+        $em = new class($u1) extends EventManager {
+
+        };
+    }
 }

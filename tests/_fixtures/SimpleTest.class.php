@@ -52,6 +52,8 @@ class SimpleTest extends \TuleapTestCase
 
         $this->assertIsA($generic_user, 'GenericUser');
 
+        $this->assertIdentical($this->user, $generic_user);
+
         $this->assertCount($all, 1);
     }
 

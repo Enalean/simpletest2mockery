@@ -77,6 +77,15 @@ class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
             );
         }
 
+        if ($node instanceof Node\Expr\MethodCall && (string) $node->name === 'assertIdentical') {
+            return new Node\Expr\MethodCall(
+                $node->var,
+                'assertSame',
+                $node->args,
+                $node->getAttributes()
+            );
+        }
+
         if ($node instanceof Node\Expr\MethodCall && (string) $node->name === 'assertIsA') {
             return new Node\Expr\MethodCall(
                 $node->var,

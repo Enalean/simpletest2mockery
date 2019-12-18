@@ -52,6 +52,8 @@ class SimpleTest extends \PHPUnit\Framework\TestCase
 
         $this->assertInstanceOf(\GenericUser::class, $generic_user);
 
+        $this->assertSame($this->user, $generic_user);
+
         $this->assertCount(1, $all);
     }
 

@@ -30,6 +30,12 @@ use Psr\Log\LoggerInterface;
 
 class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
 {
+    private const DIRECT_ASSERTION_TRANSFORMATION_MAPPING = [
+        'assertEqual'      => 'assertEquals',
+        'assertArrayEmpty' => 'assertEmpty',
+        'assertIdentical'  => 'assertSame',
+    ];
+
     private $class_name;
     /**
      * @var LoggerInterface
@@ -68,31 +74,15 @@ class ConvertToPHPUnitVisitor extends NodeVisitorAbstract
             }
         }
 
-        if ($node instanceof Node\Expr\MethodCall && (string) $node->name === 'assertEqual') {
-            return new Node\Expr\MethodCall(
-                $node->var,
-                'assertEquals',
-                $node->args,
-                $node->getAttributes()
-            );
-        }
-
-        if ($node instanceof Node\Expr\MethodCall && (string) $node->name === 'assertArrayEmpty') {
-            return new Node\Expr\MethodCall(
-                $node->var,
-                'assertEmpty',
-                $node->args,
-                $node->getAttributes()
-            );
-        }
-
-        if ($node instanceof Node\Expr\MethodCall && (string) $node->name === 'assertIdentical') {
-            return new Node\Expr\MethodCall(
-                $node->var,
-                'assertSame',
-                $node->args,
-                $node->getAttributes()
-            );
+        foreach (self::DIRECT_ASSERTION_TRANSFORMATION_MAPPING as $simpletest_assertion => $phpunit_assertion) {
+            if ($node instanceof Node\Expr\MethodCall && (string) $node->name === $simpletest_assertion) {
+                return new Node\Expr\MethodCall(
+                    $node->var,
+                    $phpunit_assertion,
+                    $node->args,
+                    $node->getAttributes()
+                );
+            }
         }
 
         if ($node instanceof Node\Expr\MethodCall && (string) $node->name === 'assertIsA') {

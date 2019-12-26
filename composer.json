@@ -1,5 +1,6 @@
 {
     "require": {
+        "php": ">=7.2",
         "nikic/php-parser": "^4",
         "monolog/monolog": "^2.0",
         "symfony/console": "^5.0",

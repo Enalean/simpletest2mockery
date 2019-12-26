@@ -55,6 +55,8 @@ class SimpleTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($this->user, $generic_user);
 
         $this->assertCount(1, $all);
+
+        $this->assertEmpty($my_array);
     }
 
     function getSomeBuilder() {
